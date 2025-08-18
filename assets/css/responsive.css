@@ -1,0 +1,212 @@
+/* AutoKosten Vergelijker - Responsive Design */
+/* Mobile-first responsive breakpoints */
+
+/* Mobile devices (default styles above) */
+/* Up to 767px - handled by default styles */
+
+/* Tablet styles */
+@media (max-width: 768px) {
+    :root {
+        --font-size-4xl: 2rem;
+        --font-size-3xl: 1.5rem;
+        --font-size-2xl: 1.25rem;
+        --spacing-3xl: 2rem;
+        --spacing-2xl: 1.5rem;
+    }
+
+    .container {
+        padding: 0 var(--spacing-sm);
+    }
+
+    /* Header */
+    .header-content {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+        text-align: center;
+    }
+
+    .nav ul {
+        gap: var(--spacing-lg);
+    }
+
+    /* Hero */
+    .hero {
+        padding: var(--spacing-2xl) 0;
+    }
+
+    .hero-cta {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    /* Opties Grid */
+    .opties-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+
+    .optie-card {
+        padding: var(--spacing-lg);
+    }
+
+    /* Vergelijken */
+    .vergelijken-content {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-xl);
+    }
+
+    /* Footer */
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    :root {
+        --font-size-4xl: 1.75rem;
+        --font-size-3xl: 1.375rem;
+        --spacing-xl: 1rem;
+        --spacing-2xl: 1.25rem;
+        --spacing-3xl: 1.5rem;
+    }
+
+    .container {
+        padding: 0 var(--spacing-xs);
+    }
+
+    /* Navigation */
+    .nav ul {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    /* Uitleg */
+    .uitleg-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+
+    .uitleg-item {
+        padding: var(--spacing-lg);
+    }
+
+    /* Opties */
+    .optie-card {
+        padding: var(--spacing-md);
+    }
+
+    .optie-header h3 {
+        font-size: var(--font-size-lg);
+    }
+}
+
+/* Large tablets and small desktops */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .opties-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .vergelijken-content {
+        gap: var(--spacing-xl);
+    }
+}
+
+/* Large desktops */
+@media (min-width: 1025px) {
+    .opties-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .uitleg-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Ultra-wide screens */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1400px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Optimize for retina displays */
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 600px) {
+    .hero {
+        padding: var(--spacing-xl) 0;
+    }
+    
+    .hero-content h2 {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+/* Dark mode support (for future implementation) */
+@media (prefers-color-scheme: dark) {
+    /* Dark mode styles can be added here when needed */
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    :root {
+        --primary-color: #FF4500;
+        --secondary-color: #0052CC;
+        --gray-700: #000000;
+        --gray-800: #000000;
+        --gray-900: #000000;
+    }
+    
+    .btn {
+        border-width: 3px;
+    }
+}
+
+/* Focus styles for accessibility */
+@media (prefers-reduced-motion: no-preference) {
+    .btn:focus,
+    .nav a:focus {
+        outline: 3px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* Print-specific responsive adjustments */
+@media print {
+    .opties-grid {
+        grid-template-columns: 1fr;
+        page-break-inside: avoid;
+    }
+    
+    .optie-card {
+        page-break-inside: avoid;
+        margin-bottom: var(--spacing-lg);
+    }
+}

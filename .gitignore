@@ -1,0 +1,39 @@
+# macOS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE Files
+.idea/
+.vscode/
+*.sublime-*
+
+# Project Files
+ARCHIVE_CHAT_*.md
+PROJECT_STATUS_*.md
+*.log
+*.cache
+
+# Sensitive Config
+config/local.php
+config/credentials.php
+
+# Testing
+tests/coverage/
+phpunit.xml
+
+# Dependencies
+vendor/
+node_modules/
+
+# Temporary Files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Upload Directories
+uploads/
+temp/
+cache/

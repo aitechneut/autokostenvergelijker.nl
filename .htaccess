@@ -1,0 +1,65 @@
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remove www
+RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+# Clean URL routing voor AutoKosten Vergelijker
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Route naar specifieke auto opties
+RewriteRule ^auto-prive-kopen-en-zakelijk-gebruiken/?$ /optie1.php [L]
+RewriteRule ^prive-een-auto-leasen/?$ /optie2.php [L]
+RewriteRule ^auto-op-de-zaak-zonder-bijtelling/?$ /optie3.php [L]
+RewriteRule ^auto-op-de-zaak-met-bijtelling/?$ /optie4.php [L]
+RewriteRule ^zakelijk-leasen/?$ /optie5.php [L]
+RewriteRule ^auto-van-de-zaak-leasen-via-werkgever/?$ /optie6.php [L]
+
+# API endpoints
+RewriteRule ^api/rdw/?$ /api/rdw.php [L]
+RewriteRule ^api/calculate/?$ /api/calculate.php [L]
+RewriteRule ^api/compare/?$ /api/compare.php [L]
+
+# Vergelijking en tools
+RewriteRule ^vergelijken/?$ /vergelijken.php [L]
+RewriteRule ^calculator/?$ /calculator.php [L]
+
+# Error pages
+ErrorDocument 404 /404.php
+ErrorDocument 500 /500.php
+
+# Security headers
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Cache settings
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>

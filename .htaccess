@@ -13,12 +13,12 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
 # Route naar specifieke auto opties
-RewriteRule ^auto-prive-kopen-en-zakelijk-gebruiken/?$ /optie1.php [L]
-RewriteRule ^prive-een-auto-leasen/?$ /optie2.php [L]
-RewriteRule ^auto-op-de-zaak-zonder-bijtelling/?$ /optie3.php [L]
-RewriteRule ^auto-op-de-zaak-met-bijtelling/?$ /optie4.php [L]
-RewriteRule ^zakelijk-leasen/?$ /optie5.php [L]
-RewriteRule ^auto-van-de-zaak-leasen-via-werkgever/?$ /optie6.php [L]
+RewriteRule ^auto-prive-kopen-en-zakelijk-gebruiken/?$ /auto-prive-kopen-en-zakelijk-gebruiken.html [L]
+RewriteRule ^prive-een-auto-leasen/?$ /prive-een-auto-leasen.html [L]
+RewriteRule ^auto-op-de-zaak-zonder-bijtelling/?$ /auto-op-de-zaak-zonder-bijtelling.html [L]
+RewriteRule ^auto-op-de-zaak-met-bijtelling/?$ /auto-op-de-zaak-met-bijtelling.html [L]
+RewriteRule ^zakelijk-leasen/?$ /zakelijk-leasen.html [L]
+RewriteRule ^auto-van-de-zaak-leasen-via-werkgever/?$ /auto-van-de-zaak-leasen-via-werkgever.html [L]
 
 # API endpoints
 RewriteRule ^api/rdw/?$ /api/rdw.php [L]

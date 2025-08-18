@@ -33,13 +33,26 @@ class PriveKopenZakelijkCalculator {
     }
 
     setupEventListeners() {
-        // Kenteken lookup
+        // Kenteken lookup - Auto search on input
         const kentekenInput = document.getElementById('kenteken');
         if (kentekenInput) {
             let timeout;
             kentekenInput.addEventListener('input', (e) => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => this.handleKentekenInput(e.target.value), 500);
+            });
+        }
+
+        // Lookup button - Manual search trigger
+        const lookupBtn = document.getElementById('lookup-btn');
+        if (lookupBtn) {
+            lookupBtn.addEventListener('click', () => {
+                const kenteken = document.getElementById('kenteken')?.value;
+                if (kenteken && kenteken.length >= 6) {
+                    this.performKentekenLookup(kenteken);
+                } else {
+                    this.showKentekenError('Voer een geldig kenteken in (minimaal 6 tekens)');
+                }
             });
         }
 
@@ -118,12 +131,19 @@ class PriveKopenZakelijkCalculator {
             return;
         }
 
+        // Auto-lookup alleen bij volledige kentekens (6+ chars)
+        if (kenteken.length >= 6) {
+            await this.performKentekenLookup(kenteken);
+        }
+    }
+
+    async performKentekenLookup(kenteken) {
         try {
             this.showKentekenLoading(true);
             
             // RDW lookup via global rdwApi
             if (typeof window.rdwApi === 'undefined') {
-                throw new Error('RDW API niet geladen');
+                throw new Error('RDW API niet geladen - controleer of rdw-api.js correct is ingeladen');
             }
             
             const vehicleData = await window.rdwApi.getVehicleData(kenteken);
@@ -134,12 +154,12 @@ class PriveKopenZakelijkCalculator {
                 this.updateCalculation();
                 this.showKentekenSuccess(vehicleData);
             } else {
-                this.showKentekenError('Auto niet gevonden in RDW database');
+                this.showKentekenError('Auto niet gevonden in RDW database. Vul de gegevens handmatig in.');
             }
             
         } catch (error) {
             console.error('Kenteken lookup fout:', error);
-            this.showKentekenError(error.message);
+            this.showKentekenError(`RDW API fout: ${error.message}`);
         } finally {
             this.showKentekenLoading(false);
         }

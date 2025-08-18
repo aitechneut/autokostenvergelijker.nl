@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calculator Test</title>
+</head>
+<body>
+    <h1>Test Calculator JavaScript</h1>
+    
+    <input type="text" id="kenteken" placeholder="XX-XX-XX" value="01-ABC-2">
+    <button onclick="testRDW()">Test RDW API</button>
+    
+    <div id="result"></div>
+    
+    <script src="/assets/js/rdw-api.js"></script>
+    <script>
+        async function testRDW() {
+            const kenteken = document.getElementById('kenteken').value;
+            const result = document.getElementById('result');
+            
+            try {
+                result.innerHTML = 'Loading...';
+                console.log('Testing RDW API...');
+                
+                if (!window.rdwApi) {
+                    throw new Error('RDW API not loaded');
+                }
+                
+                const data = await window.rdwApi.getVehicleData(kenteken);
+                result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                console.log('Success:', data);
+                
+            } catch (error) {
+                result.innerHTML = 'Error: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

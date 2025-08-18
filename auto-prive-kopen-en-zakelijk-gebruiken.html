@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Privé Kopen + Zakelijk Gebruiken - Kosten Calculator</title>
+    <meta name="description" content="Bereken de werkelijke kosten van een privé gekochte auto die zakelijk gebruikt wordt. Inclusief €0,23/km aftrek en alle bijkomende kosten.">
+    <meta name="keywords" content="auto privé kopen zakelijk gebruiken, kilometervergoeding, €0,23 per kilometer, zakelijke auto kosten">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/responsive.css">
+    <link rel="stylesheet" href="/assets/css/calculator.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><a href="/">AutoKosten Vergelijker</a></h1>
+                    <p>Nederlandse Auto Financiering Expert</p>
+                </div>
+                <nav class="nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/#opties">6 Opties</a></li>
+                        <li><a href="/vergelijken">Vergelijken</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <section class="breadcrumb">
+        <div class="container">
+            <nav class="breadcrumb-nav">
+                <ol>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/#opties">6 Opties</a></li>
+                    <li class="current">Auto Privé Kopen + Zakelijk Gebruiken</li>
+                </ol>
+            </nav>
+        </div>
+    </section>
+
+    <!-- Hero Section -->
+    <section class="hero calculator-hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Auto Privé Kopen + Zakelijk Gebruiken</h1>
+                <p class="hero-subtitle">Bereken de werkelijke kosten inclusief €0,23 per kilometer zakelijke aftrek</p>
+                <div class="hero-highlight">
+                    <div class="highlight-item">
+                        <span class="highlight-label">Kilometervergoeding 2025:</span>
+                        <span class="highlight-value">€0,23 per km</span>
+                    </div>
+                    <div class="highlight-item">
+                        <span class="highlight-label">Eigendom:</span>
+                        <span class="highlight-value">Privé</span>
+                    </div>
+                    <div class="highlight-item">
+                        <span class="highlight-label">Bijtelling:</span>
+                        <span class="highlight-value">Geen</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Uitleg Section -->
+    <section class="uitleg calculator-uitleg">
+        <div class="container">
+            <div class="uitleg-content">
+                <div class="uitleg-text">
+                    <h2>Hoe werkt deze optie?</h2>
+                    <div class="uitleg-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Privé Eigendom</h3>
+                                <p>Je koopt de auto privé en bent volledig eigenaar. Alle financiering en risico's zijn voor jouw rekening.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Zakelijk Gebruik</h3>
+                                <p>Je gebruikt de auto voor zakelijke ritten en houdt een kilometerregistratie bij.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Kilometervergoeding</h3>
+                                <p>Voor elke zakelijke kilometer krijg je €0,23 vergoed of kun je aftrekken van je belasting.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="uitleg-visual">
+                    <div class="visual-card">
+                        <h3>Voorbeeld Berekening</h3>
+                        <div class="example-calc">
+                            <div class="calc-row">
+                                <span>Totale autokosten per jaar:</span>
+                                <span>€8.500</span>
+                            </div>
+                            <div class="calc-row zakelijk">
+                                <span>Zakelijke kilometers (15.000 × €0,23):</span>
+                                <span>- €3.450</span>
+                            </div>
+                            <div class="calc-row total">
+                                <span><strong>Netto kosten:</strong></span>
+                                <span><strong>€5.050</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Calculator Section -->
+    <section class="calculator-section">
+        <div class="container">
+            <h2>Bereken Jouw Kosten</h2>
+            
+            <div class="calculator-layout">
+                <!-- Input Panel -->
+                <div class="calculator-input">
+                    <div class="input-group">
+                        <h3>Voertuiggegevens</h3>
+                        
+                        <!-- Kenteken Input -->
+                        <div class="input-field">
+                            <label for="kenteken">Kenteken</label>
+                            <div class="kenteken-input">
+                                <input type="text" id="kenteken" placeholder="XX-999-XX" maxlength="8">
+                                <button type="button" id="lookup-btn" class="btn btn-secondary">
+                                    <span id="lookup-text">Opzoeken</span>
+                                    <span id="lookup-spinner" class="spinner" style="display: none;">⏳</span>
+                                </button>
+                            </div>
+                            <small class="input-help">RDW gegevens worden automatisch opgehaald</small>
+                        </div>
+
+                        <!-- Auto Details (filled by RDW) -->
+                        <div id="auto-details" style="display: none;">
+                            <div class="auto-info">
+                                <h4 id="auto-title">Voertuig Informatie</h4>
+                                <div class="auto-specs">
+                                    <div class="spec-item">
+                                        <span class="spec-label">Merk/Model:</span>
+                                        <span id="merk-model" class="spec-value">-</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-label">Bouwjaar:</span>
+                                        <span id="bouwjaar" class="spec-value">-</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-label">Brandstof:</span>
+                                        <span id="brandstof" class="spec-value">-</span>
+                                    </div>
+                                    <div class="spec-item">
+                                        <span class="spec-label">CO2 Uitstoot:</span>
+                                        <span id="co2-uitstoot" class="spec-value">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Input (fallback) -->
+                        <div class="input-field">
+                            <label for="aankoopprijs">Aankoopprijs (excl. BTW)</label>
+                            <div class="currency-input">
+                                <span class="currency-symbol">€</span>
+                                <input type="number" id="aankoopprijs" placeholder="25000" min="0" step="100">
+                            </div>
+                        </div>
+
+                        <div class="input-field">
+                            <label for="bouwjaar-manual">Bouwjaar</label>
+                            <input type="number" id="bouwjaar-manual" placeholder="2020" min="1990" max="2025">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <h3>Gebruik & Kilometers</h3>
+                        
+                        <div class="input-field">
+                            <label for="totaal-km">Totaal kilometers per jaar</label>
+                            <input type="number" id="totaal-km" placeholder="20000" min="1000" max="100000" step="1000">
+                        </div>
+
+                        <div class="input-field">
+                            <label for="zakelijk-percentage">Percentage zakelijk gebruik</label>
+                            <div class="percentage-input">
+                                <input type="range" id="zakelijk-slider" min="0" max="100" value="75">
+                                <input type="number" id="zakelijk-percentage" placeholder="75" min="0" max="100" step="5">
+                                <span class="percentage-symbol">%</span>
+                            </div>
+                            <div class="kilometers-breakdown">
+                                <span>Zakelijk: <strong id="zakelijk-km">15.000</strong> km</span>
+                                <span>Privé: <strong id="prive-km">5.000</strong> km</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <h3>Financiële Details</h3>
+                        
+                        <div class="input-field">
+                            <label for="belastingtarief">Belastingtarief</label>
+                            <select id="belastingtarief">
+                                <option value="37">37% (tot €75.518)</option>
+                                <option value="49.5">49,5% (boven €75.518)</option>
+                                <option value="25.8">25,8% (VPB tarief)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-field">
+                            <label for="gebruiksduur">Gebruiksduur</label>
+                            <select id="gebruiksduur">
+                                <option value="3">3 jaar</option>
+                                <option value="4">4 jaar</option>
+                                <option value="5" selected>5 jaar</option>
+                                <option value="6">6 jaar</option>
+                                <option value="7">7 jaar</option>
+                                <option value="8">8 jaar</option>
+                            </select>
+                        </div>
+
+                        <div class="input-field">
+                            <label for="restwaarde">Restwaarde na gebruiksduur</label>
+                            <div class="currency-input">
+                                <span class="currency-symbol">€</span>
+                                <input type="number" id="restwaarde" placeholder="10000" min="0" step="100">
+                            </div>
+                            <small class="input-help">Geschatte waarde bij verkoop</small>
+                        </div>
+                    </div>
+
+                    <!-- Calculate Button -->
+                    <div class="calculate-section">
+                        <button type="button" id="calculate-btn" class="btn btn-primary btn-large">
+                            Bereken Kosten
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Results Panel -->
+                <div class="calculator-results">
+                    <div id="results-container" style="display: none;">
+                        <!-- Results will be populated by JavaScript -->
+                    </div>
+                    
+                    <div id="results-placeholder" class="results-placeholder">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">📊</div>
+                            <h3>Resultaten</h3>
+                            <p>Vul de gegevens in en klik op "Bereken Kosten" om je persoonlijke kostenoverzicht te zien.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Voor/Nadelen Section -->
+    <section class="pros-cons">
+        <div class="container">
+            <h2>Voor- en Nadelen van Deze Optie</h2>
+            <div class="pros-cons-grid">
+                <div class="pros">
+                    <h3>✅ Voordelen</h3>
+                    <ul>
+                        <li><strong>Eigendom:</strong> De auto is volledig van jou</li>
+                        <li><strong>Fiscaal voordelig:</strong> €0,23 per zakelijke kilometer aftrekbaar</li>
+                        <li><strong>Geen bijtelling:</strong> Privé eigendom = geen bijtelling</li>
+                        <li><strong>Flexibiliteit:</strong> Vrij in gebruik en onderhoud</li>
+                        <li><strong>Restwaarde:</strong> Volledige restwaarde is voor jou</li>
+                        <li><strong>Veel zakelijke km:</strong> Hoe meer zakelijk, hoe voordeliger</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>❌ Nadelen</h3>
+                    <ul>
+                        <li><strong>Eigen risico:</strong> Afschrijving en reparaties zijn voor jou</li>
+                        <li><strong>Cashflow:</strong> Hele aankoopbedrag moet gefinancierd</li>
+                        <li><strong>Administratie:</strong> Kilometerregistratie bijhouden verplicht</li>
+                        <li><strong>Weinig zakelijk gebruik:</strong> Bij weinig zakelijke km minder voordelig</li>
+                        <li><strong>Onderhoud:</strong> Alle onderhoud en reparaties eigen kosten</li>
+                        <li><strong>Verzekering:</strong> Volledige verzekeringspremie privé</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vergelijken Section -->
+    <section class="vergelijken">
+        <div class="container">
+            <h2>Vergelijk met Andere Opties</h2>
+            <div class="vergelijken-content">
+                <p>Wil je zien hoe deze optie zich verhoudt tot de andere 5 financieringsmogelijkheden?</p>
+                <div class="vergelijken-buttons">
+                    <a href="/vergelijken" class="btn btn-primary">Vergelijk Alle 6 Opties</a>
+                    <a href="/#opties" class="btn btn-secondary">Bekijk Andere Opties</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>AutoKosten Vergelijker</h3>
+                    <p>Professionele tool voor Nederlandse ondernemers</p>
+                    <p>© 2025 Richard Surie - Alle rechten voorbehouden</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Belangrijk</h4>
+                    <ul>
+                        <li><a href="/disclaimer">Disclaimer</a></li>
+                        <li><a href="/privacy">Privacy</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-tech">
+                    <h4>Deze Optie</h4>
+                    <ul>
+                        <li>Kilometervergoeding €0,23</li>
+                        <li>Privé eigendom</li>
+                        <li>Zakelijke aftrek mogelijk</li>
+                        <li>Geen bijtelling</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/assets/js/main.js"></script>
+    <script src="/assets/js/navigation.js"></script>
+    <script src="/assets/js/rdw-api.js"></script>
+    <script src="/assets/js/calculator-prive-kopen.js"></script>
+</body>
+</html>

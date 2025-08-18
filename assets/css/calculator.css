@@ -225,6 +225,185 @@
     margin-bottom: var(--spacing-lg);
 }
 
+/* Results Content Styling */
+.results-content {
+    display: block;
+}
+
+.results-content h3 {
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-xl);
+    border-bottom: 2px solid var(--gray-200);
+    padding-bottom: var(--spacing-md);
+}
+
+.results-summary {
+    margin-bottom: var(--spacing-xl);
+}
+
+.cost-highlight {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--white);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.cost-label {
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
+    margin-bottom: var(--spacing-xs);
+}
+
+.cost-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+}
+
+.cost-detail {
+    font-size: var(--font-size-sm);
+    opacity: 0.8;
+}
+
+.results-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.cost-section {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border-left: 4px solid var(--gray-300);
+}
+
+.cost-section.fiscal-benefit {
+    background: rgba(0, 170, 68, 0.05);
+    border-left-color: var(--accent-color);
+}
+
+.cost-section h4 {
+    color: var(--gray-800);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-lg);
+}
+
+.cost-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.cost-item:last-child {
+    border-bottom: none;
+}
+
+.cost-item.highlight {
+    background: rgba(0, 170, 68, 0.1);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    border-bottom: none;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
+.cost-item span:first-child {
+    color: var(--gray-700);
+}
+
+.cost-item span:last-child {
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.results-footer {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 2px solid var(--gray-200);
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+}
+
+.results-footer .btn {
+    min-width: 160px;
+}
+
+/* Vehicle Card Styling */
+.vehicle-card {
+    background: var(--white);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-md) 0;
+    box-shadow: var(--box-shadow-sm);
+}
+
+.vehicle-card h4 {
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-lg);
+}
+
+.vehicle-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.vehicle-details span {
+    color: var(--gray-700);
+    font-size: var(--font-size-sm);
+}
+
+.youngtimer-badge {
+    background: var(--accent-color);
+    color: var(--white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    grid-column: 1 / -1;
+    justify-self: start;
+}
+
+/* Loading States */
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Error States */
+.error-message {
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.error-message h4 {
+    margin-bottom: var(--spacing-md);
+}
+
 /* Pros/Cons */
 .pros-cons {
     padding: var(--spacing-2xl) 0;

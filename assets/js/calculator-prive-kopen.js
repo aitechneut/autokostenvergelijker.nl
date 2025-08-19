@@ -166,8 +166,8 @@ class PriveKopenZakelijkCalculator {
     }
 
     populateVehicleData(vehicleData) {
-        // Update auto informatie in UI
-        this.updateVehicleDisplay(vehicleData);
+        // Update auto informatie in UI - CHAT #11: Fixed function name + NEDC fuel info
+        this.updateVehicleDisplayWithFuelInfo(vehicleData);
         
         // Estimate aankoopprijs gebaseerd op leeftijd/type
         const estimatedPrice = this.estimateVehiclePrice(vehicleData);
@@ -264,6 +264,87 @@ class PriveKopenZakelijkCalculator {
         };
         
         return fuelUnits[brandstofType] || '/liter';
+    }
+
+    updateVehicleDisplayWithFuelInfo(vehicleData) {
+        // CHAT #11: Enhanced vehicle display with NEDC brandstofverbruik
+        const vehicleInfo = document.getElementById('vehicle-info');
+        if (vehicleInfo) {
+            const fuelUnit = this.getFuelUnit(vehicleData.brandstof);
+            const bijtellingsInfo = vehicleData.isYoungtimer 
+                ? `<span class="youngtimer-badge">Youngtimer (35% bijtelling)</span>`
+                : `<span class="bijtelling-info">${vehicleData.bijtellingspercentage}% bijtelling</span>`;
+            
+            // Get fuel consumption info with NEDC priority
+            const fuelConsumptionInfo = this.getFuelConsumptionInfo(vehicleData);
+            
+            vehicleInfo.innerHTML = `
+                <div class="vehicle-card">
+                    <h4>${vehicleData.merk} ${vehicleData.handelsbenaming}</h4>
+                    <div class="vehicle-details">
+                        <span><strong>Kenteken:</strong> ${vehicleData.kenteken}</span>
+                        <span><strong>Bouwjaar:</strong> ${vehicleData.bouwjaar}</span>
+                        <span class="fuel-type"><strong>Brandstof:</strong> <em>${vehicleData.brandstof}</em> ${fuelUnit}</span>
+                        <span><strong>Gewicht:</strong> ${vehicleData.gewicht} kg</span>
+                        ${fuelConsumptionInfo.display}
+                        ${bijtellingsInfo}
+                        ${vehicleData.isElektrisch ? '<span class="electric-badge">⚡ Elektrisch voertuig</span>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Hide manual fields when RDW data is available
+        this.toggleManualFields(vehicleData);
+    }
+
+    getFuelConsumptionInfo(vehicleData) {
+        // CHAT #11: Get formatted fuel consumption display with NEDC priority
+        let consumption = null;
+        let source = 'geschat';
+        let badge = 'estimated-badge';
+        
+        // Priority 1: NEDC (Nederlandse fiscaliteit)
+        if (vehicleData.brandstofverbruik_nedc) {
+            consumption = vehicleData.brandstofverbruik_nedc;
+            source = 'NEDC';
+            badge = 'nedc-badge';
+        }
+        // Priority 2: WLTP fallback
+        else if (vehicleData.brandstofverbruik_wltp) {
+            consumption = vehicleData.brandstofverbruik_wltp;
+            source = 'WLTP';
+            badge = 'wltp-badge';
+        }
+        // Priority 3: Estimated for electric cars
+        else if (vehicleData.isElektrisch) {
+            consumption = 18; // kWh/100km geschat
+            source = 'geschat';
+            badge = 'estimated-badge';
+        }
+        // Fallback for other fuel types
+        else {
+            const fuelType = vehicleData.brandstof || 'Benzine';
+            const estimatedConsumption = {
+                'Benzine': 7.5,
+                'Diesel': 6.5,
+                'Hybride': 5.5,
+                'Plug-in Hybride': 4.5,
+                'LPG': 8.5
+            };
+            consumption = estimatedConsumption[fuelType] || 7.0;
+            source = 'geschat';
+            badge = 'estimated-badge';
+        }
+        
+        const unit = vehicleData.isElektrisch ? 'kWh/100km' : 'l/100km';
+        
+        return {
+            value: consumption,
+            source: source,
+            badge: badge,
+            display: `<span class="fuel-consumption ${badge === 'nedc-badge' ? 'nedc-data' : ''}"><strong>Verbruik:</strong> ${consumption} ${unit} <span class="${badge}">${source}</span></span>`
+        };
     }
 
     updateVehicleDisplay(vehicleData) {
@@ -502,19 +583,65 @@ class PriveKopenZakelijkCalculator {
     }
 
     calculateFuelCosts(inputs) {
-        // Brandstofkosten gebaseerd op verbruik of schatting
-        let verbruik = 7.0; // Default l/100km
+        // CHAT #10: NEDC Brandstofverbruik Integration
+        // Gebruik RDW NEDC data voor accurate Nederlandse belastingcalculaties
         
-        if (inputs.vehicleData?.verbruikGemengd) {
-            verbruik = inputs.vehicleData.verbruikGemengd;
-        } else if (inputs.vehicleData?.brandstof === 'Elektrisch') {
-            verbruik = 20; // kWh/100km voor elektrisch
+        let verbruik = 7.0; // Default fallback l/100km
+        let dataSource = 'geschat'; // Track welke data we gebruiken
+        
+        if (inputs.vehicleData) {
+            // PRIORITEIT 1: NEDC brandstofverbruik (Nederlandse fiscaliteit)
+            if (inputs.vehicleData.brandstofverbruik_nedc && inputs.vehicleData.brandstofverbruik_nedc > 0) {
+                verbruik = inputs.vehicleData.brandstofverbruik_nedc;
+                dataSource = 'NEDC (RDW)';
+                console.log('🎯 Gebruik NEDC brandstofverbruik:', verbruik, 'l/100km');
+                
+            // PRIORITEIT 2: WLTP fallback
+            } else if (inputs.vehicleData.brandstofverbruik_wltp && inputs.vehicleData.brandstofverbruik_wltp > 0) {
+                verbruik = inputs.vehicleData.brandstofverbruik_wltp;
+                dataSource = 'WLTP (RDW)';
+                console.log('🔄 Gebruik WLTP brandstofverbruik:', verbruik, 'l/100km');
+                
+            // PRIORITEIT 3: Elektrische auto speciale behandeling
+            } else if (inputs.vehicleData.brandstof === 'Elektrisch') {
+                verbruik = 20; // kWh/100km standaard voor elektrisch
+                dataSource = 'geschat (elektrisch)';
+                console.log('⚡ Elektrisch verbruik geschat:', verbruik, 'kWh/100km');
+            }
         }
         
         const kmPerJaar = inputs.kmPerJaar;
         const brandstofPerJaar = (kmPerJaar / 100) * verbruik;
+        const totaleKosten = brandstofPerJaar * inputs.brandstofprijs;
         
-        return brandstofPerJaar * inputs.brandstofprijs;
+        // Store consumption info voor display
+        this.fuelConsumptionInfo = {
+            verbruik: verbruik,
+            dataSource: dataSource,
+            hasNedcData: inputs.vehicleData?.hasNedcData || false,
+            brandstofType: inputs.vehicleData?.brandstof || 'Onbekend',
+            jaarlijksBrandstof: Math.round(brandstofPerJaar),
+            kmPerJaar: kmPerJaar
+        };
+        
+        console.log('⛽ Brandstofkosten berekening:', {
+            verbruik: verbruik,
+            dataSource: dataSource,
+            jaarlijksBrandstof: Math.round(brandstofPerJaar),
+            kosten: Math.round(totaleKosten)
+        });
+        
+        return totaleKosten;
+    }
+
+    getFuelConsumptionDisplay() {
+        // CHAT #11: Display function for fuel consumption info
+        if (!this.fuelConsumptionInfo) return '';
+        
+        const badge = this.fuelConsumptionInfo.dataSource.includes('NEDC') ? 'nedc-badge' :
+                     this.fuelConsumptionInfo.dataSource.includes('WLTP') ? 'wltp-badge' : 'estimated-badge';
+        
+        return `<span class="${badge}">(${this.fuelConsumptionInfo.dataSource})</span>`;
     }
 
     calculateRepairCosts(inputs) {
@@ -576,8 +703,8 @@ class PriveKopenZakelijkCalculator {
                     <div class="cost-section">
                         <h4>Variabele Kosten (${calculation.variabeleKosten.totaal.toLocaleString()}/jaar)</h4>
                         <div class="cost-items">
-                            <div class="cost-item">
-                                <span>Brandstof</span>
+                            <div class="cost-item ${this.fuelConsumptionInfo?.dataSource?.includes('NEDC') ? 'nedc-data' : ''}">
+                                <span>Brandstof ${this.getFuelConsumptionDisplay()}</span>
                                 <span>€${calculation.variabeleKosten.brandstof.toLocaleString()}</span>
                             </div>
                             <div class="cost-item">

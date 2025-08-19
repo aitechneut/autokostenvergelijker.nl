@@ -8,6 +8,43 @@ en dit project volgt [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Planned
+- Calculator brandstofverbruik integratie met RDW NEDC data
+- Tweede calculator: "Privé een auto leasen"
+- Remaining 4 auto financieringsopties
+- PDF export functionaliteit
+
+## [1.7] - 2025-08-19 - Chat #08 + #09 Deployment
+
+### 🚀 Major Features Added
+- **NEDC Brandstofverbruik Integration**: RDW API now fetches NEDC fuel consumption data
+- **Auto Comparison System**: Compare multiple vehicles side-by-side  
+- **Enhanced Data Quality**: NEDC data prioritized for Dutch tax compliance
+
+### 🔧 Technical Improvements
+- **RDW API Upgrade**: 4 parallel API calls (added NEDC dataset dqbz-ecw7)
+- **Fuel Type Mapping**: Improved brandstof type recognition and normalization
+- **Error Handling**: Graceful degradation when NEDC data unavailable
+- **Performance**: Maintained caching and rate limiting with additional dataset
+
+### 🇳🇱 Dutch Tax Compliance
+- **NEDC Priority**: Dutch tax calculations now use NEDC values when available
+- **WLTP Fallback**: Automatic fallback to WLTP for newer vehicles
+- **Youngtimer Support**: Enhanced handling for 15-30 year old vehicles
+
+### 📊 Data Structure Enhancements
+- **New Fields**: nedcBrandstofverbruik, nedcCo2Uitstoot, hasNedcData
+- **Improved Fields**: verbruikGemengd now uses best available data (NEDC > WLTP)
+- **Quality Assessment**: Enhanced scoring system favoring NEDC data
+
+### 🎯 Business Impact
+- More accurate fuel cost calculations
+- Better compliance with Dutch tax regulations
+- Professional-grade data quality assessment
+- Enhanced user experience with automatic data lookup
+
+## [1.6] - 2025-08-18 - Chat #07 + #08 Features
+
+### Planned
 - RDW API integratie voor automatische voertuiggegevens
 - Eerste berekeningsmodule: auto-prive-kopen-en-zakelijk-gebruiken
 - Admin backend voor formule management

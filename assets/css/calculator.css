@@ -49,6 +49,56 @@
     font-weight: 600;
 }
 
+/* CHAT #11: NEDC/WLTP/Estimated Badges Styling */
+.nedc-badge, .wltp-badge, .estimated-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+}
+
+.nedc-badge {
+    background: #28a745;
+    color: white;
+    box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+}
+
+.wltp-badge {
+    background: #007bff;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0, 123, 255, 0.3);
+}
+
+.estimated-badge {
+    background: #6c757d;
+    color: white;
+    box-shadow: 0 1px 3px rgba(108, 117, 125, 0.3);
+}
+
+/* NEDC Data Highlighting */
+.nedc-data {
+    border-left: 3px solid #28a745;
+    padding-left: 12px;
+    background: rgba(40, 167, 69, 0.05);
+    border-radius: 0 4px 4px 0;
+}
+
+.fuel-consumption {
+    display: block;
+    margin: 4px 0;
+    padding: 6px 0;
+}
+
+/* Badge hover effects */
+.nedc-badge:hover, .wltp-badge:hover, .estimated-badge:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+
 /* Breadcrumb */
 .breadcrumb {
     background: var(--gray-50);

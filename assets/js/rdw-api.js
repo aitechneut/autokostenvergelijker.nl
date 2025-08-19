@@ -38,9 +38,10 @@ class RDWApi {
             console.log('🔍 RDW API lookup voor:', normalizedKenteken);
             
             // Parallel requests voor verschillende datasets
-            const [basicData, fuelData, recallData] = await Promise.allSettled([
+            const [basicData, fuelData, consumptionData, recallData] = await Promise.allSettled([
                 this.fetchBasicVehicleData(normalizedKenteken),
                 this.fetchFuelData(normalizedKenteken),
+                this.fetchConsumptionData(normalizedKenteken), // NEDC brandstofverbruik
                 this.fetchRecallData(normalizedKenteken)
             ]);
 
@@ -48,6 +49,7 @@ class RDWApi {
             const vehicleData = this.combineVehicleData(
                 basicData.status === 'fulfilled' ? basicData.value : null,
                 fuelData.status === 'fulfilled' ? fuelData.value : null,
+                consumptionData.status === 'fulfilled' ? consumptionData.value : null,
                 recallData.status === 'fulfilled' ? recallData.value : null,
                 normalizedKenteken
             );
@@ -133,6 +135,30 @@ class RDWApi {
     }
 
     /**
+     * NEDC Brandstofverbruik data (aparte dataset met NEDC cijfers)
+     * Dataset: dqbz-ecw7 - specifiek voor NEDC brandstofverbruik
+     */
+    async fetchConsumptionData(kenteken) {
+        try {
+            const url = `${this.baseUrl}/resource/dqbz-ecw7.json?kenteken=${kenteken}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                console.log('🔥 NEDC consumption data niet beschikbaar voor:', kenteken);
+                return null; // Niet kritiek, NEDC data is niet voor alle auto's beschikbaar
+            }
+            
+            const data = await response.json();
+            console.log('📊 NEDC consumption data gevonden voor:', kenteken, data.length, 'records');
+            return data.length > 0 ? data[0] : null; // Neem eerste record
+            
+        } catch (error) {
+            console.log('⚠️ NEDC API call gefaald:', error.message);
+            return null; // Niet kritiek
+        }
+    }
+
+    /**
      * Recall informatie (optioneel)
      */
     async fetchRecallData(kenteken) {
@@ -154,7 +180,7 @@ class RDWApi {
     /**
      * Combineer alle API responses tot één bruikbaar object
      */
-    combineVehicleData(basicData, fuelData, recallData, kenteken) {
+    combineVehicleData(basicData, fuelData, consumptionData, recallData, kenteken) {
         if (!basicData) {
             return null; // Geen basis data = geen auto gevonden
         }
@@ -194,11 +220,16 @@ class RDWApi {
             brandstof: this.normalizeBrandstofType(basicData.brandstof_omschrijving),
             isElektrisch: this.isElektrischVoertuig(basicData.brandstof_omschrijving),
             
-            // Brandstofgegevens (indien beschikbaar)
-            verbruikStad: fuelData?.brandstofverbruik_stad ? parseFloat(fuelData.brandstofverbruik_stad) : null,
-            verbruikSnelweg: fuelData?.brandstofverbruik_buiten ? parseFloat(fuelData.brandstofverbruik_buiten) : null,
-            verbruikGemengd: fuelData?.brandstofverbruik_gecombineerd ? parseFloat(fuelData.brandstofverbruik_gecombineerd) : null,
-            co2Uitstoot: fuelData?.co2_uitstoot_gecombineerd ? parseInt(fuelData.co2_uitstoot_gecombineerd) : null,
+            // Brandstofgegevens (combinatie van fuelData en consumptionData - NEDC heeft prioriteit)
+            verbruikStad: this.getBestConsumptionValue(fuelData?.brandstofverbruik_stad, consumptionData?.brandstofverbruik_stad),
+            verbruikSnelweg: this.getBestConsumptionValue(fuelData?.brandstofverbruik_buiten, consumptionData?.brandstofverbruik_buiten),
+            verbruikGemengd: this.getBestConsumptionValue(fuelData?.brandstofverbruik_gecombineerd, consumptionData?.brandstofverbruik_gecombineerd),
+            co2Uitstoot: this.getBestConsumptionValue(fuelData?.co2_uitstoot_gecombineerd, consumptionData?.co2_uitstoot_gecombineerd, true),
+            
+            // Extra NEDC specifieke velden (als beschikbaar)
+            nedcBrandstofverbruik: consumptionData?.brandstofverbruik_gecombineerd ? parseFloat(consumptionData.brandstofverbruik_gecombineerd) : null,
+            nedcCo2Uitstoot: consumptionData?.co2_uitstoot_gecombineerd ? parseInt(consumptionData.co2_uitstoot_gecombineerd) : null,
+            hasNedcData: !!consumptionData,
             
             // Fiscale informatie
             catalogusprijs: basicData.catalogusprijs ? parseInt(basicData.catalogusprijs) : null,
@@ -213,9 +244,33 @@ class RDWApi {
             recalls: recallData || [],
             
             // API metadata
-            dataQuality: this.assessDataQuality(basicData, fuelData),
+            dataQuality: this.assessDataQuality(basicData, fuelData, consumptionData),
             lastUpdated: new Date().toISOString()
         };
+    }
+
+    /**
+     * Bepaal beste brandstofverbruik waarde (NEDC heeft prioriteit)
+     * NEDC wordt gebruikt voor Nederlandse fiscaliteit als beschikbaar
+     */
+    getBestConsumptionValue(fuelValue, nedcValue, isInteger = false) {
+        // Converteer naar juiste type
+        const parseValue = (val) => {
+            if (!val || val === '' || val === '0') return null;
+            return isInteger ? parseInt(val) : parseFloat(val);
+        };
+        
+        const nedcParsed = parseValue(nedcValue);
+        const fuelParsed = parseValue(fuelValue);
+        
+        // NEDC heeft prioriteit (Nederlandse fiscaliteit)
+        if (nedcParsed !== null && nedcParsed > 0) {
+            console.log('🎯 Gebruik NEDC waarde:', nedcParsed, 'i.p.v. fuel waarde:', fuelParsed);
+            return nedcParsed;
+        }
+        
+        // Fallback naar reguliere fuel data
+        return fuelParsed;
     }
 
     /**
@@ -323,7 +378,7 @@ class RDWApi {
     /**
      * Beoordeel kwaliteit van opgevraagde data
      */
-    assessDataQuality(basicData, fuelData) {
+    assessDataQuality(basicData, fuelData, consumptionData) {
         let score = 0;
         let maxScore = 0;
         
@@ -338,9 +393,13 @@ class RDWApi {
         if (basicData?.catalogusprijs) score++;
         if (basicData?.brandstof_omschrijving) score++;
         
-        // Brandstofgegevens (bonus)
-        maxScore += 1;
-        if (fuelData?.brandstofverbruik_gecombineerd) score++;
+        // Brandstofgegevens (bonus - NEDC krijgt meer punten)
+        maxScore += 2;
+        if (consumptionData?.brandstofverbruik_gecombineerd) {
+            score += 2; // NEDC data is belangrijker
+        } else if (fuelData?.brandstofverbruik_gecombineerd) {
+            score += 1; // Reguliere fuel data als fallback
+        }
         
         return Math.round((score / maxScore) * 100);
     }

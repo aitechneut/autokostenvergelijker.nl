@@ -116,7 +116,18 @@ class RDWApi {
         }
         
         const data = await response.json();
-        return data.length > 0 ? data[0] : null;
+        const result = data.length > 0 ? data[0] : null;
+        
+        // TESLA DEBUG: Log raw API response for debugging
+        if (kenteken.toLowerCase().includes('k693bs') || (result && result.merk && result.merk.toLowerCase().includes('tesla'))) {
+            console.log('🔥 TESLA DEBUG - Raw RDW API response for:', kenteken);
+            console.log('Raw data:', JSON.stringify(result, null, 2));
+            console.log('brandstof_omschrijving:', result?.brandstof_omschrijving);
+            console.log('merk:', result?.merk);
+            console.log('handelsbenaming:', result?.handelsbenaming);
+        }
+        
+        return result;
     }
 
     /**
@@ -184,6 +195,18 @@ class RDWApi {
         if (!basicData) {
             return null; // Geen basis data = geen auto gevonden
         }
+        
+        // TESLA DEBUG: Log ALL incoming data for Tesla debugging
+        const merk = basicData.merk?.toLowerCase() || '';
+        if (merk.includes('tesla') || kenteken.toLowerCase().includes('k693bs')) {
+            console.log('🔥 TESLA DEBUG - combineVehicleData called with:');
+            console.log('kenteken:', kenteken);
+            console.log('basicData merk:', basicData.merk);
+            console.log('basicData brandstof_omschrijving:', basicData.brandstof_omschrijving);
+            console.log('basicData (first 10 keys):', Object.keys(basicData).slice(0, 10));
+            console.log('fuelData keys:', fuelData ? Object.keys(fuelData).slice(0, 5) : 'null');
+            console.log('consumptionData keys:', consumptionData ? Object.keys(consumptionData).slice(0, 5) : 'null');
+        }
 
         // Nederlandse youngtimer check (15-30 jaar oud)
         const currentYear = new Date().getFullYear();
@@ -219,6 +242,10 @@ class RDWApi {
             // Brandstof en milieu - CHAT #11: Enhanced Tesla Detection
             brandstof: this.enhancedBrandstofDetection(basicData),
             isElektrisch: this.enhancedElektrischDetection(basicData),
+            
+            // TESLA DEBUG: Log detection results
+            ...(merk.includes('tesla') || kenteken.toLowerCase().includes('k693bs') ? 
+                console.log('🔥 TESLA DEBUG - Detection results: brandstof =', this.enhancedBrandstofDetection(basicData), ', isElektrisch =', this.enhancedElektrischDetection(basicData)) || {} : {}),
             
             // Brandstofgegevens (combinatie van fuelData en consumptionData - NEDC heeft prioriteit)
             verbruikStad: this.getBestConsumptionValue(fuelData?.brandstofverbruik_stad, consumptionData?.brandstofverbruik_stad),
@@ -389,13 +416,22 @@ class RDWApi {
      * Gebruikt merk informatie als fallback voor onbekende brandstoftypes
      */
     enhancedBrandstofDetection(basicData) {
+        // TESLA DEBUG: Log detection process
+        const merk = basicData.merk?.toLowerCase() || '';
+        if (merk.includes('tesla')) {
+            console.log('🔥 TESLA DEBUG - Enhanced brandstof detection for:', basicData.merk);
+            console.log('brandstof_omschrijving input:', basicData.brandstof_omschrijving);
+        }
+        
         // Eerst normale brandstof mapping proberen
         const normalizedBrandstof = this.normalizeBrandstofType(basicData.brandstof_omschrijving);
         
+        if (merk.includes('tesla')) {
+            console.log('🔥 TESLA DEBUG - Normalized brandstof result:', normalizedBrandstof);
+        }
+        
         // Als brandstof onbekend is, check het merk
         if (normalizedBrandstof === 'Onbekend') {
-            const merk = basicData.merk?.toLowerCase() || '';
-            
             // Tesla's zijn altijd elektrisch
             if (merk.includes('tesla')) {
                 console.log('🔋 Tesla gedetecteerd als elektrisch o.b.v. merk:', basicData.merk);
@@ -417,6 +453,14 @@ class RDWApi {
             }
         }
         
+        // TESLA DEBUG: Als Tesla NIET als Onbekend wordt gedetecteerd, dan is er iets anders aan de hand
+        if (merk.includes('tesla') && normalizedBrandstof !== 'Onbekend') {
+            console.log('🚨 TESLA DEBUG - Tesla heeft bekende brandstof type:', normalizedBrandstof);
+            console.log('🚨 Possible normalizeBrandstofType() not detecting correctly');
+            // Force Tesla to electric regardless
+            return 'Elektrisch';
+        }
+        
         return normalizedBrandstof;
     }
 
@@ -425,13 +469,23 @@ class RDWApi {
      * Gebruikt merk informatie als fallback
      */
     enhancedElektrischDetection(basicData) {
+        // TESLA DEBUG: Log electric detection process
+        const merk = basicData.merk?.toLowerCase() || '';
+        if (merk.includes('tesla')) {
+            console.log('🔥 TESLA DEBUG - Enhanced elektrisch detection for:', basicData.merk);
+            console.log('brandstof_omschrijving input:', basicData.brandstof_omschrijving);
+        }
+        
         // Eerst normale elektrisch check
         const normalCheck = this.isElektrischVoertuig(basicData.brandstof_omschrijving);
+        
+        if (merk.includes('tesla')) {
+            console.log('🔥 TESLA DEBUG - Normal electric check result:', normalCheck);
+        }
         
         if (normalCheck) return true;
         
         // Fallback: check merk voor bekende elektrische auto's
-        const merk = basicData.merk?.toLowerCase() || '';
         const model = basicData.handelsbenaming?.toLowerCase() || '';
         
         // Tesla's zijn altijd elektrisch

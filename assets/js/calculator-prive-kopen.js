@@ -251,6 +251,12 @@ class PriveKopenZakelijkCalculator {
     
     getFuelUnit(brandstofType) {
         // CHAT #07 FIX: Correcte eenheden per brandstoftype
+        
+        // TESLA DEBUG: Log fuel unit determination
+        if (brandstofType && (brandstofType.toLowerCase().includes('tesla') || brandstofType === 'Elektrisch')) {
+            console.log('🔥 TESLA DEBUG - getFuelUnit called with:', brandstofType);
+        }
+        
         const fuelUnits = {
             'Benzine': '/liter',
             'Diesel': '/liter', 
@@ -263,14 +269,37 @@ class PriveKopenZakelijkCalculator {
             'Onbekend': '/liter'
         };
         
-        return fuelUnits[brandstofType] || '/liter';
+        const result = fuelUnits[brandstofType] || '/liter';
+        
+        // TESLA DEBUG: Log result
+        if (brandstofType && (brandstofType.toLowerCase().includes('tesla') || brandstofType === 'Elektrisch')) {
+            console.log('🔥 TESLA DEBUG - getFuelUnit result:', result);
+        }
+        
+        return result;
     }
 
     updateVehicleDisplayWithFuelInfo(vehicleData) {
         // CHAT #11: Enhanced vehicle display with NEDC brandstofverbruik
+        
+        // TESLA DEBUG: Log vehicle display data
+        const merk = vehicleData.merk?.toLowerCase() || '';
+        if (merk.includes('tesla')) {
+            console.log('🔥 TESLA DEBUG - updateVehicleDisplayWithFuelInfo called');
+            console.log('vehicleData.brandstof:', vehicleData.brandstof);
+            console.log('vehicleData.isElektrisch:', vehicleData.isElektrisch);
+            console.log('Full vehicleData:', vehicleData);
+        }
+        
         const vehicleInfo = document.getElementById('vehicle-info');
         if (vehicleInfo) {
             const fuelUnit = this.getFuelUnit(vehicleData.brandstof);
+            
+            // TESLA DEBUG: Log fuel unit calculation
+            if (merk.includes('tesla')) {
+                console.log('🔥 TESLA DEBUG - getFuelUnit result for', vehicleData.brandstof, ':', fuelUnit);
+            }
+            
             const bijtellingsInfo = vehicleData.isYoungtimer 
                 ? `<span class="youngtimer-badge">Youngtimer (35% bijtelling)</span>`
                 : `<span class="bijtelling-info">${vehicleData.bijtellingspercentage}% bijtelling</span>`;

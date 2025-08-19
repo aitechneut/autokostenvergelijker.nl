@@ -28,8 +28,75 @@ class PriveKopenZakelijkCalculator {
 
     init() {
         this.setupEventListeners();
+        this.loadRecalculateData(); // NEW: Load data from comparison page
         this.initializeForm();
         console.log('💰 Calculator geïnitialiseerd voor: Auto Privé Kopen + Zakelijk Gebruiken');
+    }
+
+    /**
+     * CHAT #14: Load recalculate data from comparison page
+     * Herstelt formulier met opgeslagen data voor herberekening
+     */
+    loadRecalculateData() {
+        try {
+            const recalculateData = localStorage.getItem('recalculateData');
+            if (!recalculateData) return;
+            
+            const data = JSON.parse(recalculateData);
+            console.log('🔄 Recalculate data geladen:', data);
+            
+            // Check of data recent is (max 5 minuten oud)
+            const dataAge = Date.now() - data.timestamp;
+            if (dataAge > 5 * 60 * 1000) {
+                console.log('⏰ Recalculate data te oud, wordt genegeerd');
+                localStorage.removeItem('recalculateData');
+                return;
+            }
+            
+            // Sla vehicle data op voor later gebruik
+            this.currentVehicleData = data.vehicle;
+            
+            // Vul formulier in met opgeslagen inputs
+            if (data.inputs) {
+                this.populateFormFromInputs(data.inputs);
+            }
+            
+            // Wis de recalculate data (eenmalig gebruik)
+            localStorage.removeItem('recalculateData');
+            
+            console.log('✅ Formulier hersteld voor herberekening');
+            
+        } catch (error) {
+            console.error('Fout bij laden recalculate data:', error);
+            localStorage.removeItem('recalculateData');
+        }
+    }
+
+    /**
+     * CHAT #14: Populate form from saved inputs
+     */
+    populateFormFromInputs(inputs) {
+        // Kenteken field
+        const kentekenField = document.getElementById('kenteken');
+        if (kentekenField && inputs.kenteken) {
+            kentekenField.value = inputs.kenteken;
+        }
+        
+        // Alle overige input velden
+        Object.keys(inputs).forEach(key => {
+            const field = document.getElementById(key);
+            if (field && inputs[key] !== undefined) {
+                field.value = inputs[key];
+                console.log(`🔄 Veld '${key}' hersteld:`, inputs[key]);
+            }
+        });
+        
+        // Trigger RDW lookup als kenteken beschikbaar is
+        if (inputs.kenteken) {
+            setTimeout(() => {
+                this.handleKentekenInput(inputs.kenteken);
+            }, 500);
+        }
     }
 
     setupEventListeners() {
@@ -906,6 +973,9 @@ class PriveKopenZakelijkCalculator {
                 timestamp: new Date().toISOString()
             };
             
+            // CHAT #14: Sla ook inputs op voor herberekening
+            comparisonData.inputs = this.getCurrentInputs();
+            
             // Sla op in localStorage voor vergelijking
             let comparisons = JSON.parse(localStorage.getItem('autoComparisons') || '[]');
             
@@ -941,6 +1011,23 @@ class PriveKopenZakelijkCalculator {
             console.error('Fout bij toevoegen aan vergelijking:', error);
             alert('Er ging iets mis bij het toevoegen aan de vergelijking.');
         }
+    }
+    
+    /**
+     * CHAT #14: Get current form inputs for saving
+     */
+    getCurrentInputs() {
+        return {
+            kenteken: document.getElementById('kenteken')?.value || '',
+            aankoopprijs: document.getElementById('aankoopprijs')?.value || '',
+            restwaarde: document.getElementById('restwaarde')?.value || '',
+            eigendomDuur: document.getElementById('eigendomDuur')?.value || '',
+            kmPerJaar: document.getElementById('kmPerJaar')?.value || '',
+            zakelijkPercentage: document.getElementById('zakelijkPercentage')?.value || '',
+            brandstofprijs: document.getElementById('brandstofprijs')?.value || '',
+            verzekeringType: document.getElementById('verzekeringType')?.value || '',
+            belastingtarief: document.getElementById('belastingtarief')?.value || ''
+        };
     }
     
     showComparisonSuccess(message) {

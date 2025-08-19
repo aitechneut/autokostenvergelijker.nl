@@ -1,5 +1,49 @@
 # CHANGELOG - AutoKosten Vergelijker
 
+## v1.11 - 2025-08-19 - CHAT #14: AutosVergelijken Enhanced UX
+
+### 🚀 COMPARISON PAGE MAJOR ENHANCEMENTS
+**4 kritieke UX verbeteringen geïmplementeerd:**
+
+#### 1️⃣ TOOLTIP VERBETERING
+- ✅ **"Deze auto verwijderen"** tooltip op rode kruisje
+- ✅ **Hover styling** voor remove button
+
+#### 2️⃣ GEDETAILLEERDE KOSTEN BREAKDOWN
+- ✅ **Vaste kosten details**: Afschrijving, verzekering, MRB, onderhoud apart
+- ✅ **Variabele kosten details**: Brandstof/stroomkosten + bandenkosten apart
+- ✅ **Fiscale details**: Bijtelling percentage + kilometer aftrek breakdown
+- ✅ **Smart brandstof labeling**: "Benzinekosten" vs "Stroomkosten" o.b.v. brandstoftype
+
+#### 3️⃣ HERBEREKEN FUNCTIE ENHANCEMENT
+- ✅ **loadRecalculateData()**: Auto-populate formulier bij herberekening
+- ✅ **getCurrentInputs()**: Sla alle input state op voor naadloze workflow
+- ✅ **populateFormFromInputs()**: Herstel formulier exact zoals het was
+- ✅ **Timestamp validatie**: Max 5 minuten oude data
+- ✅ **Auto RDW lookup**: Trigger kenteken lookup bij hersteld formulier
+
+#### 4️⃣ CSS STYLING IMPROVEMENTS
+- ✅ **cost-details**: Indentering en achtergrond voor sub-items
+- ✅ **cost-subitem**: Clean layout voor detail kosten
+- ✅ **remove-btn hover**: Rode achtergrond bij hover
+- ✅ **Responsive design**: Werkt op alle schermformaten
+
+### 🏆 USER EXPERIENCE WINS
+- **Geen data verlies**: Alle formulier velden blijven ingevuld bij herberekening
+- **Transparante kosten**: Weet precies waar elke euro naar toe gaat
+- **Professionele workflow**: Enterprise-level vergelijking tool
+- **Intuitive interface**: Duidelijke tooltips en visual feedback
+
+### 💼 BUSINESS IMPACT
+- Nederlandse ondernemers krijgen betere inzicht in autokosten
+- Reduce frustratie: geen handmatige herInvoer bij aanpassingen
+- Verhoogde conversie: gemakkelijker om meerdere scenario's te vergelijken
+- Professional image: Enterprise-level tool kwaliteit
+
+**Deployment Status:** ✅ v1.11 READY FOR DEPLOYMENT
+
+---
+
 ## v1.10 - 2025-08-19 - CHAT #13: Bijtelling Fix + Formule Uitleg
 
 ### ✅ BIJTELLING PROBLEEM OPGELOST

@@ -92,7 +92,7 @@ class ComparisonManager {
                 <div class="card-header">
                     <h4>${comparison.typeName}</h4>
                     ${isFirst ? '<div class="best-badge">💡 Goedkoopste</div>' : ''}
-                    <button class="remove-btn" onclick="comparisonManager.removeComparison('${comparison.id}')">
+                    <button class="remove-btn" onclick="comparisonManager.removeComparison('${comparison.id}')" title="Deze auto verwijderen">
                         ❌
                     </button>
                 </div>
@@ -113,17 +113,55 @@ class ComparisonManager {
                     </div>
                     <div class="cost-breakdown">
                         <div class="cost-item">
-                            <span>Vaste kosten</span>
+                            <span>📊 Vaste kosten</span>
                             <span>€${Math.round(calc.vasteKosten.totaal / 12).toLocaleString()}</span>
                         </div>
+                        <div class="cost-details">
+                            <div class="cost-subitem">
+                                <span>• Afschrijving</span>
+                                <span>€${Math.round((calc.vasteKosten.afschrijving || 0) / 12).toLocaleString()}</span>
+                            </div>
+                            <div class="cost-subitem">
+                                <span>• Verzekering</span>
+                                <span>€${Math.round((calc.vasteKosten.verzekering || 0) / 12).toLocaleString()}</span>
+                            </div>
+                            <div class="cost-subitem">
+                                <span>• MRB</span>
+                                <span>€${Math.round((calc.vasteKosten.mrb || 0) / 12).toLocaleString()}</span>
+                            </div>
+                            <div class="cost-subitem">
+                                <span>• Onderhoud</span>
+                                <span>€${Math.round((calc.vasteKosten.onderhoud || 0) / 12).toLocaleString()}</span>
+                            </div>
+                        </div>
                         <div class="cost-item">
-                            <span>Variabele kosten</span>
+                            <span>⛽ Variabele kosten</span>
                             <span>€${Math.round(calc.variabeleKosten.totaal / 12).toLocaleString()}</span>
+                        </div>
+                        <div class="cost-details">
+                            <div class="cost-subitem">
+                                <span>• ${vehicle.brandstof === 'Elektrisch' ? 'Stroom' : 'Brandstof'}kosten</span>
+                                <span>€${Math.round((calc.variabeleKosten.brandstof || 0) / 12).toLocaleString()}</span>
+                            </div>
+                            <div class="cost-subitem">
+                                <span>• Bandenkosten</span>
+                                <span>€${Math.round((calc.variabeleKosten.banden || 0) / 12).toLocaleString()}</span>
+                            </div>
                         </div>
                         ${calc.fiscaal ? `
                         <div class="cost-item fiscal">
-                            <span>Fiscaal voordeel</span>
+                            <span>💰 Fiscaal voordeel</span>
                             <span>-€${Math.round(calc.fiscaal.belastingvoordeel / 12).toLocaleString()}</span>
+                        </div>
+                        <div class="cost-details">
+                            <div class="cost-subitem">
+                                <span>• Bijtelling (${calc.fiscaal.bijtellingspercentage || 22}%)</span>
+                                <span>€${Math.round((calc.fiscaal.bijtelling || 0) / 12).toLocaleString()}</span>
+                            </div>
+                            <div class="cost-subitem">
+                                <span>• Kilometer aftrek</span>
+                                <span>-€${Math.round((calc.fiscaal.kilometervergoeding || 0) / 12).toLocaleString()}</span>
+                            </div>
                         </div>
                         ` : ''}
                     </div>
@@ -133,7 +171,7 @@ class ComparisonManager {
                     <button class="btn btn-sm btn-secondary" onclick="comparisonManager.viewDetails('${comparison.id}')">
                         📊 Details
                     </button>
-                    <button class="btn btn-sm btn-primary" onclick="comparisonManager.recalculate('${comparison.type}')">
+                    <button class="btn btn-sm btn-primary" onclick="comparisonManager.recalculate('${comparison.id}')">
                         🔄 Herbereken
                     </button>
                 </div>
@@ -248,7 +286,7 @@ class ComparisonManager {
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-secondary" onclick="this.closest('.details-modal').remove()">Sluiten</button>
-                    <button class="btn btn-primary" onclick="comparisonManager.recalculate('${comparison.type}')">Herbereken</button>
+                    <button class="btn btn-primary" onclick="comparisonManager.recalculate('${comparison.id}')">Herbereken</button>
                 </div>
             </div>
         `;
@@ -256,13 +294,32 @@ class ComparisonManager {
         document.body.appendChild(modal);
     }
 
-    recalculate(optionType) {
+    recalculate(comparisonId) {
+        // Vind de comparison data
+        const comparison = this.comparisons.find(comp => comp.id == comparisonId);
+        if (!comparison) {
+            console.error('Comparison niet gevonden:', comparisonId);
+            window.location.href = '/auto-prive-kopen-en-zakelijk-gebruiken.html';
+            return;
+        }
+        
+        // Sla comparison data op voor hergebruik
+        const recalculateData = {
+            vehicle: comparison.vehicle,
+            inputs: comparison.inputs,
+            type: comparison.type,
+            timestamp: Date.now()
+        };
+        
+        localStorage.setItem('recalculateData', JSON.stringify(recalculateData));
+        
         // Redirect naar juiste calculator
         const calculatorUrls = {
             'prive-kopen-zakelijk': '/auto-prive-kopen-en-zakelijk-gebruiken.html'
         };
         
-        const url = calculatorUrls[optionType] || '/auto-prive-kopen-en-zakelijk-gebruiken.html';
+        const url = calculatorUrls[comparison.type] || '/auto-prive-kopen-en-zakelijk-gebruiken.html';
+        console.log('🔄 Herbereken:', comparison.typeName, '-> ', url);
         window.location.href = url;
     }
 
@@ -282,6 +339,13 @@ const comparisonStyles = `
 .best-badge { background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; }
 .main-cost { text-align: center; background: #f8fafc; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
 .cost-value { font-size: 1.5rem; font-weight: 700; color: #2563eb; display: block; }
+.cost-breakdown { display: grid; gap: 0.5rem; }
+.cost-details { margin-left: 1rem; background: #f8fafc; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem; margin-top: 0.25rem; }
+.cost-subitem { display: flex; justify-content: space-between; color: #64748b; padding: 0.1rem 0; }
+.cost-item { display: flex; justify-content: space-between; font-weight: 500; }
+.cost-item.fiscal { color: #10b981; }
+.remove-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 0.25rem; border-radius: 4px; }
+.remove-btn:hover { background: #fee2e2; }
 .details-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .modal-content { background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; }
 </style>

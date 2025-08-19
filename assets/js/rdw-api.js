@@ -216,9 +216,9 @@ class RDWApi {
             aantalZitplaatsen: parseInt(basicData.aantal_zitplaatsen) || 0,
             aantalDeuren: parseInt(basicData.aantal_deuren) || 0,
             
-            // Brandstof en milieu
-            brandstof: this.normalizeBrandstofType(basicData.brandstof_omschrijving),
-            isElektrisch: this.isElektrischVoertuig(basicData.brandstof_omschrijving),
+            // Brandstof en milieu - CHAT #11: Enhanced Tesla Detection
+            brandstof: this.enhancedBrandstofDetection(basicData),
+            isElektrisch: this.enhancedElektrischDetection(basicData),
             
             // Brandstofgegevens (combinatie van fuelData en consumptionData - NEDC heeft prioriteit)
             verbruikStad: this.getBestConsumptionValue(fuelData?.brandstofverbruik_stad, consumptionData?.brandstofverbruik_stad),
@@ -226,9 +226,10 @@ class RDWApi {
             verbruikGemengd: this.getBestConsumptionValue(fuelData?.brandstofverbruik_gecombineerd, consumptionData?.brandstofverbruik_gecombineerd),
             co2Uitstoot: this.getBestConsumptionValue(fuelData?.co2_uitstoot_gecombineerd, consumptionData?.co2_uitstoot_gecombineerd, true),
             
-            // Extra NEDC specifieke velden (als beschikbaar)
-            nedcBrandstofverbruik: consumptionData?.brandstofverbruik_gecombineerd ? parseFloat(consumptionData.brandstofverbruik_gecombineerd) : null,
-            nedcCo2Uitstoot: consumptionData?.co2_uitstoot_gecombineerd ? parseInt(consumptionData.co2_uitstoot_gecombineerd) : null,
+            // Extra NEDC specifieke velden (als beschikbaar) - CHAT #11: Fixed field names
+            brandstofverbruik_nedc: consumptionData?.brandstofverbruik_gecombineerd ? parseFloat(consumptionData.brandstofverbruik_gecombineerd) : null,
+            brandstofverbruik_wltp: fuelData?.brandstofverbruik_gecombineerd ? parseFloat(fuelData.brandstofverbruik_gecombineerd) : null,
+            co2_nedc: consumptionData?.co2_uitstoot_gecombineerd ? parseInt(consumptionData.co2_uitstoot_gecombineerd) : null,
             hasNedcData: !!consumptionData,
             
             // Fiscale informatie
@@ -332,19 +333,26 @@ class RDWApi {
     }
 
     /**
-     * Normaliseer brandstoftype - CHAT #07 FIX
-     * Verbeterde mapping voor betere RDW data parsing
+     * Normaliseer brandstoftype - CHAT #11 FIX: Enhanced Tesla/Electric Detection
+     * Verbeterde mapping voor betere RDW data parsing + Tesla specifieke fixes
      */
     normalizeBrandstofType(brandstofOmschrijving) {
         if (!brandstofOmschrijving) return 'Onbekend';
         
         const brandstof = brandstofOmschrijving.toLowerCase().trim();
         
+        // CHAT #11: TESLA SPECIFIC FIXES
+        // RDW registreert Tesla's soms met rare brandstof omschrijvingen
+        if (brandstof === '' || brandstof === 'onbekend' || brandstof === 'unknown') {
+            // Voor lege/onbekende brandstof: check merk voor Tesla's
+            return 'Onbekend'; // Dit wordt later in isElektrischVoertuig() gefixed voor Tesla's
+        }
+        
         // Exact matches eerst (RDW gebruikt specifieke termen)
         if (brandstof === 'benzine' || brandstof === 'euro 95 benzine' || brandstof === 'super benzine') return 'Benzine';
         if (brandstof === 'diesel' || brandstof === 'gasolie') return 'Diesel';
-        if (brandstof === 'elektriciteit' || brandstof === 'elektrisch') return 'Elektrisch';
-        if (brandstof === 'waterstof') return 'Waterstof';
+        if (brandstof === 'elektriciteit' || brandstof === 'elektrisch' || brandstof === 'electric') return 'Elektrisch';
+        if (brandstof === 'waterstof' || brandstof === 'hydrogen') return 'Waterstof';
         if (brandstof === 'lpg' || brandstof === 'autogas') return 'LPG';
         if (brandstof === 'cng' || brandstof === 'aardgas') return 'CNG';
         
@@ -360,8 +368,9 @@ class RDWApi {
         // Diesel varianten  
         if (brandstof.includes('diesel') || brandstof.includes('gasolie') || brandstof.includes('tdi')) return 'Diesel';
         
-        // Elektrische varianten
-        if (brandstof.includes('elektr') || brandstof.includes('ev') || brandstof.includes('battery')) return 'Elektrisch';
+        // Elektrische varianten - ENHANCED for Tesla
+        if (brandstof.includes('elektr') || brandstof.includes('ev') || brandstof.includes('battery') || 
+            brandstof.includes('accu') || brandstof.includes('stroom')) return 'Elektrisch';
         
         // Alternatieve brandstoffen
         if (brandstof.includes('lpg') || brandstof.includes('autogas') || brandstof.includes('gas')) return 'LPG';
@@ -371,8 +380,75 @@ class RDWApi {
         // Log onbekende brandstoftypes voor debugging
         console.warn('🔥 Onbekend brandstoftype gevonden:', brandstofOmschrijving);
         
-        // Fallback naar 'Benzine' voor de meeste onbekende types (meest voorkomend)
-        return brandstofOmschrijving.length > 20 ? 'Benzine' : brandstofOmschrijving;
+        // Fallback naar 'Onbekend' voor debug purposes
+        return 'Onbekend';
+    }
+
+    /**
+     * CHAT #11: Enhanced brandstof detection voor Tesla's
+     * Gebruikt merk informatie als fallback voor onbekende brandstoftypes
+     */
+    enhancedBrandstofDetection(basicData) {
+        // Eerst normale brandstof mapping proberen
+        const normalizedBrandstof = this.normalizeBrandstofType(basicData.brandstof_omschrijving);
+        
+        // Als brandstof onbekend is, check het merk
+        if (normalizedBrandstof === 'Onbekend') {
+            const merk = basicData.merk?.toLowerCase() || '';
+            
+            // Tesla's zijn altijd elektrisch
+            if (merk.includes('tesla')) {
+                console.log('🔋 Tesla gedetecteerd als elektrisch o.b.v. merk:', basicData.merk);
+                return 'Elektrisch';
+            }
+            
+            // Andere bekende elektrische merken
+            if (merk.includes('nissan') && basicData.handelsbenaming?.toLowerCase().includes('leaf')) {
+                return 'Elektrisch';
+            }
+            if (merk.includes('bmw') && basicData.handelsbenaming?.toLowerCase().includes('i3')) {
+                return 'Elektrisch';
+            }
+            if (merk.includes('volkswagen') && basicData.handelsbenaming?.toLowerCase().includes('id.')) {
+                return 'Elektrisch';
+            }
+            if (merk.includes('audi') && basicData.handelsbenaming?.toLowerCase().includes('e-tron')) {
+                return 'Elektrisch';
+            }
+        }
+        
+        return normalizedBrandstof;
+    }
+
+    /**
+     * CHAT #11: Enhanced elektrisch detection voor Tesla's
+     * Gebruikt merk informatie als fallback
+     */
+    enhancedElektrischDetection(basicData) {
+        // Eerst normale elektrisch check
+        const normalCheck = this.isElektrischVoertuig(basicData.brandstof_omschrijving);
+        
+        if (normalCheck) return true;
+        
+        // Fallback: check merk voor bekende elektrische auto's
+        const merk = basicData.merk?.toLowerCase() || '';
+        const model = basicData.handelsbenaming?.toLowerCase() || '';
+        
+        // Tesla's zijn altijd elektrisch
+        if (merk.includes('tesla')) {
+            console.log('⚡ Tesla gedetecteerd als elektrisch o.b.v. merk');
+            return true;
+        }
+        
+        // Andere bekende elektrische modellen
+        if ((merk.includes('nissan') && model.includes('leaf')) ||
+            (merk.includes('bmw') && model.includes('i3')) ||
+            (merk.includes('volkswagen') && model.includes('id.')) ||
+            (merk.includes('audi') && model.includes('e-tron'))) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**

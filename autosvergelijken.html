@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto's Vergelijken - AutoKosten Vergelijker</title>
+    <meta name="description" content="Vergelijk de kosten van verschillende auto financieringsopties naast elkaar. Zie direct welke optie het beste bij jou past.">
+    <meta name="keywords" content="auto kosten vergelijken, financieringsopties vergelijken, auto keuze">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/responsive.css">
+    <link rel="stylesheet" href="/assets/css/calculator.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1><a href="/">AutoKosten Vergelijker</a></h1>
+                    <p>Nederlandse Auto Financiering Expert</p>
+                </div>
+                <nav class="nav">
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/#opties">6 Opties</a></li>
+                        <li><a href="/vergelijken">Vergelijken</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <section class="breadcrumb">
+        <div class="container">
+            <nav class="breadcrumb-nav">
+                <ol>
+                    <li><a href="/">Home</a></li>
+                    <li class="current">Auto's Vergelijken</li>
+                </ol>
+            </nav>
+        </div>
+    </section>
+
+    <!-- Hero Section -->
+    <section class="hero calculator-hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Auto's Vergelijken</h1>
+                <p class="hero-subtitle">Bekijk je berekende opties naast elkaar en kies de beste voor jouw situatie</p>
+                <div class="hero-highlight">
+                    <div class="highlight-item">
+                        <span class="highlight-label">Vergelijkingen:</span>
+                        <span class="highlight-value" id="comparison-count">0</span>
+                    </div>
+                    <div class="highlight-item">
+                        <span class="highlight-label">Best berekend:</span>
+                        <span class="highlight-value">Real-time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="comparison-section">
+        <div class="container">
+            <div id="comparison-container">
+                <!-- Vergelijkingen worden hier geladen -->
+                <div id="empty-state" class="empty-state">
+                    <div class="empty-content">
+                        <div class="empty-icon">📊</div>
+                        <h3>Nog geen vergelijkingen</h3>
+                        <p>Begin met het berekenen van de kosten voor een van de 6 auto financieringsopties om ze hier te vergelijken.</p>
+                        <div class="empty-actions">
+                            <a href="/auto-prive-kopen-en-zakelijk-gebruiken.html" class="btn btn-primary">Start Calculator</a>
+                            <a href="/#opties" class="btn btn-secondary">Bekijk Alle Opties</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>AutoKosten Vergelijker</h3>
+                    <p>Professionele tool voor Nederlandse ondernemers</p>
+                    <p>© 2025 Richard Surie - Alle rechten voorbehouden</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Tools</h4>
+                    <ul>
+                        <li><a href="/auto-prive-kopen-en-zakelijk-gebruiken.html">Privé Kopen Calculator</a></li>
+                        <li><a href="/#opties">Alle 6 Opties</a></li>
+                        <li><a href="/vergelijken">Vergelijken</a></li>
+                    </ul>
+                </div>
+                <div class="footer-tech">
+                    <h4>Vergelijken</h4>
+                    <ul>
+                        <li>Side-by-side overzicht</li>
+                        <li>Real-time berekeningen</li>
+                        <li>Nederlandse belastingregels</li>
+                        <li>Professionele rapporten</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/assets/js/main.js"></script>
+    <script src="/assets/js/navigation.js"></script>
+    <script src="/assets/js/comparison.js"></script>
+</body>
+</html>

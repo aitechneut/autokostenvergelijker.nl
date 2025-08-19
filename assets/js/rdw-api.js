@@ -277,22 +277,47 @@ class RDWApi {
     }
 
     /**
-     * Normaliseer brandstoftype
+     * Normaliseer brandstoftype - CHAT #07 FIX
+     * Verbeterde mapping voor betere RDW data parsing
      */
     normalizeBrandstofType(brandstofOmschrijving) {
         if (!brandstofOmschrijving) return 'Onbekend';
         
-        const brandstof = brandstofOmschrijving.toLowerCase();
+        const brandstof = brandstofOmschrijving.toLowerCase().trim();
         
-        if (brandstof.includes('benzine')) return 'Benzine';
-        if (brandstof.includes('diesel')) return 'Diesel';
-        if (brandstof.includes('elektriciteit')) return 'Elektrisch';
-        if (brandstof.includes('waterstof')) return 'Waterstof';
-        if (brandstof.includes('lpg')) return 'LPG';
-        if (brandstof.includes('cng')) return 'CNG';
-        if (brandstof.includes('hybride')) return 'Hybride';
+        // Exact matches eerst (RDW gebruikt specifieke termen)
+        if (brandstof === 'benzine' || brandstof === 'euro 95 benzine' || brandstof === 'super benzine') return 'Benzine';
+        if (brandstof === 'diesel' || brandstof === 'gasolie') return 'Diesel';
+        if (brandstof === 'elektriciteit' || brandstof === 'elektrisch') return 'Elektrisch';
+        if (brandstof === 'waterstof') return 'Waterstof';
+        if (brandstof === 'lpg' || brandstof === 'autogas') return 'LPG';
+        if (brandstof === 'cng' || brandstof === 'aardgas') return 'CNG';
         
-        return brandstofOmschrijving; // Return origineel als onbekend
+        // Partial matches voor hybrides en varianten
+        if (brandstof.includes('hybride') || brandstof.includes('hybrid')) {
+            if (brandstof.includes('plug')) return 'Plug-in Hybride';
+            return 'Hybride';
+        }
+        
+        // Benzine varianten
+        if (brandstof.includes('benzine') || brandstof.includes('euro 95') || brandstof.includes('super')) return 'Benzine';
+        
+        // Diesel varianten  
+        if (brandstof.includes('diesel') || brandstof.includes('gasolie') || brandstof.includes('tdi')) return 'Diesel';
+        
+        // Elektrische varianten
+        if (brandstof.includes('elektr') || brandstof.includes('ev') || brandstof.includes('battery')) return 'Elektrisch';
+        
+        // Alternatieve brandstoffen
+        if (brandstof.includes('lpg') || brandstof.includes('autogas') || brandstof.includes('gas')) return 'LPG';
+        if (brandstof.includes('cng') || brandstof.includes('aardgas') || brandstof.includes('methaan')) return 'CNG';
+        if (brandstof.includes('waterstof') || brandstof.includes('hydrogen') || brandstof.includes('h2')) return 'Waterstof';
+        
+        // Log onbekende brandstoftypes voor debugging
+        console.warn('🔥 Onbekend brandstoftype gevonden:', brandstofOmschrijving);
+        
+        // Fallback naar 'Benzine' voor de meeste onbekende types (meest voorkomend)
+        return brandstofOmschrijving.length > 20 ? 'Benzine' : brandstofOmschrijving;
     }
 
     /**

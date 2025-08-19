@@ -182,6 +182,9 @@ class PriveKopenZakelijkCalculator {
         // Update brandstofprijs default gebaseerd op brandstoftype
         const fuelPrice = this.getDefaultFuelPrice(vehicleData.brandstof);
         this.setFieldValue('brandstofprijs', fuelPrice);
+        
+        // CHAT #07 FIX: Update brandstofprijs label met juiste eenheid
+        this.updateFuelPriceLabel(vehicleData.brandstof);
     }
 
     estimateVehiclePrice(vehicleData) {
@@ -230,34 +233,96 @@ class PriveKopenZakelijkCalculator {
     }
 
     getDefaultFuelPrice(brandstofType) {
+        // CHAT #07 FIX: Uitgebreide brandstofprijzen 2025 Nederland
         const fuelPrices = {
             'Benzine': 1.85,
             'Diesel': 1.65,
-            'Elektrisch': 0.35, // Per kWh equivalent
+            'Elektrisch': 0.35, // Per kWh (thuis laden)
+            'Waterstof': 12.50, // Per kg H2
             'LPG': 0.85,
             'CNG': 1.25,
-            'Hybride': 1.75
+            'Hybride': 1.75, // Gemiddeld benzine/elektrisch
+            'Plug-in Hybride': 1.20, // Meer elektrisch gebruik
+            'Onbekend': 1.75 // Default benzine equivalent
         };
         
         return fuelPrices[brandstofType] || 1.75;
     }
+    
+    getFuelUnit(brandstofType) {
+        // CHAT #07 FIX: Correcte eenheden per brandstoftype
+        const fuelUnits = {
+            'Benzine': '/liter',
+            'Diesel': '/liter', 
+            'Elektrisch': '/kWh',
+            'Waterstof': '/kg',
+            'LPG': '/liter',
+            'CNG': '/m³',
+            'Hybride': '/liter',
+            'Plug-in Hybride': '/liter*',
+            'Onbekend': '/liter'
+        };
+        
+        return fuelUnits[brandstofType] || '/liter';
+    }
 
     updateVehicleDisplay(vehicleData) {
-        // Update vehicle info display
+        // CHAT #07 FIX: Verbeterde vehicle display met brandstoftype prominent
         const vehicleInfo = document.getElementById('vehicle-info');
         if (vehicleInfo) {
+            const fuelUnit = this.getFuelUnit(vehicleData.brandstof);
+            const bijtellingsInfo = vehicleData.isYoungtimer 
+                ? `<span class="youngtimer-badge">Youngtimer (35% bijtelling)</span>`
+                : `<span class="bijtelling-info">${vehicleData.bijtellingspercentage}% bijtelling</span>`;
+            
             vehicleInfo.innerHTML = `
                 <div class="vehicle-card">
                     <h4>${vehicleData.merk} ${vehicleData.handelsbenaming}</h4>
                     <div class="vehicle-details">
                         <span><strong>Kenteken:</strong> ${vehicleData.kenteken}</span>
                         <span><strong>Bouwjaar:</strong> ${vehicleData.bouwjaar}</span>
-                        <span><strong>Brandstof:</strong> ${vehicleData.brandstof}</span>
+                        <span class="fuel-type"><strong>Brandstof:</strong> <em>${vehicleData.brandstof}</em> ${fuelUnit}</span>
                         <span><strong>Gewicht:</strong> ${vehicleData.gewicht} kg</span>
-                        ${vehicleData.isYoungtimer ? '<span class="youngtimer-badge">Youngtimer (35% bijtelling)</span>' : ''}
+                        ${bijtellingsInfo}
+                        ${vehicleData.isElektrisch ? '<span class="electric-badge">⚡ Elektrisch voertuig</span>' : ''}
                     </div>
                 </div>
             `;
+        }
+        
+        // CHAT #07 FIX: Hide manual bouwjaar veld als RDW data beschikbaar
+        this.toggleManualFields(vehicleData);
+    }
+    
+    updateFuelPriceLabel(brandstofType) {
+        // CHAT #07 FIX: Update brandstofprijs label met correcte eenheid
+        const fuelPriceLabel = document.querySelector('label[for="brandstofprijs"]');
+        const fuelUnit = this.getFuelUnit(brandstofType);
+        
+        if (fuelPriceLabel) {
+            const isElectric = brandstofType === 'Elektrisch';
+            const labelText = isElectric 
+                ? `Stroomprijs (thuis laden ${fuelUnit})` 
+                : `Brandstofprijs ${fuelUnit}`;
+            
+            fuelPriceLabel.textContent = labelText;
+        }
+    }
+    
+    toggleManualFields(vehicleData) {
+        // CHAT #07 FIX: Conditionale weergave van handmatige velden
+        const manualBouwjaar = document.getElementById('bouwjaar-manual');
+        
+        if (manualBouwjaar) {
+            if (vehicleData && vehicleData.bouwjaar > 0) {
+                // RDW data beschikbaar - verberg handmatig veld
+                manualBouwjaar.style.display = 'none';
+                manualBouwjaar.closest('.input-field').style.display = 'none';
+            } else {
+                // Geen RDW data - toon handmatig veld
+                manualBouwjaar.style.display = 'block';
+                manualBouwjaar.closest('.input-field').style.display = 'block';
+            }
         }
     }
 
@@ -549,6 +614,9 @@ class PriveKopenZakelijkCalculator {
                     <button class="btn btn-primary" onclick="calculator.exportResults()">
                         📄 Download Rapport
                     </button>
+                    <button class="btn btn-accent" onclick="calculator.addToComparison()">
+                        ⚖️ Voeg toe aan Vergelijking
+                    </button>
                     <button class="btn btn-secondary" onclick="calculator.shareResults()">
                         📤 Deel Resultaat
                     </button>
@@ -610,6 +678,15 @@ class PriveKopenZakelijkCalculator {
         if (vehicleInfo) {
             vehicleInfo.innerHTML = '';
         }
+        
+        // CHAT #07 FIX: Toon handmatige velden weer bij geen RDW data
+        this.toggleManualFields(null);
+        
+        // Reset brandstofprijs label
+        const fuelPriceLabel = document.querySelector('label[for="brandstofprijs"]');
+        if (fuelPriceLabel) {
+            fuelPriceLabel.textContent = 'Brandstofprijs /liter';
+        }
     }
 
     updateCalculation() {
@@ -648,10 +725,115 @@ class PriveKopenZakelijkCalculator {
         // Implementatie voor delen via URL/email
         console.log('📤 Resultaat delen...');
     }
+    
+    addToComparison() {
+        // CHAT #07 FIX: Voeg auto toe aan vergelijking
+        if (!this.currentCalculation || !this.currentVehicleData) {
+            alert('Bereken eerst de kosten voordat je toevoegt aan vergelijking.');
+            return;
+        }
+        
+        try {
+            // Maak vergelijking object
+            const comparisonData = {
+                id: Date.now(), // Unieke ID
+                type: 'prive-kopen-zakelijk',
+                typeName: 'Auto Privé Kopen + Zakelijk Gebruiken',
+                vehicle: {
+                    kenteken: this.currentVehicleData.kenteken,
+                    merk: this.currentVehicleData.merk,
+                    model: this.currentVehicleData.handelsbenaming,
+                    bouwjaar: this.currentVehicleData.bouwjaar,
+                    brandstof: this.currentVehicleData.brandstof
+                },
+                calculation: this.currentCalculation,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Sla op in localStorage voor vergelijking
+            let comparisons = JSON.parse(localStorage.getItem('autoComparisons') || '[]');
+            
+            // Check of deze auto al in vergelijking staat
+            const existingIndex = comparisons.findIndex(comp => 
+                comp.vehicle.kenteken === comparisonData.vehicle.kenteken && 
+                comp.type === comparisonData.type
+            );
+            
+            if (existingIndex >= 0) {
+                // Update bestaande vergelijking
+                comparisons[existingIndex] = comparisonData;
+                this.showComparisonSuccess('Auto bijgewerkt in vergelijking!');
+            } else {
+                // Voeg nieuwe vergelijking toe
+                comparisons.push(comparisonData);
+                this.showComparisonSuccess('Auto toegevoegd aan vergelijking!');
+            }
+            
+            // Maximaal 6 vergelijkingen
+            if (comparisons.length > 6) {
+                comparisons = comparisons.slice(-6);
+            }
+            
+            localStorage.setItem('autoComparisons', JSON.stringify(comparisons));
+            
+            // Na 2 seconden: ga naar vergelijking
+            setTimeout(() => {
+                window.location.href = '/autosvergelijken.html';
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Fout bij toevoegen aan vergelijking:', error);
+            alert('Er ging iets mis bij het toevoegen aan de vergelijking.');
+        }
+    }
+    
+    showComparisonSuccess(message) {
+        // Toon success melding
+        const successDiv = document.createElement('div');
+        successDiv.className = 'comparison-success';
+        successDiv.innerHTML = `
+            <div class="success-content">
+                <span class="success-icon">✓</span>
+                <span class="success-text">${message}</span>
+                <span class="success-redirect">Redirect naar vergelijking...</span>
+            </div>
+        `;
+        
+        // Voeg toe aan results container
+        const resultsContainer = document.getElementById('results-container');
+        if (resultsContainer) {
+            resultsContainer.appendChild(successDiv);
+            
+            // Verwijder na 3 seconden
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.parentNode.removeChild(successDiv);
+                }
+            }, 3000);
+        }
+    }
 }
 
 // Initialize calculator when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.calculator = new PriveKopenZakelijkCalculator();
     console.log('🚀 Calculator pagina geladen en geïnitialiseerd');
+    
+    // CHAT #07 FIX: Toon comparison counter in header
+    window.calculator.updateComparisonCounter();
 });
+
+// CHAT #07 FIX: Helper functie voor comparison counter
+PriveKopenZakelijkCalculator.prototype.updateComparisonCounter = function() {
+    try {
+        const comparisons = JSON.parse(localStorage.getItem('autoComparisons') || '[]');
+        const counter = document.getElementById('comparison-counter');
+        
+        if (counter) {
+            counter.textContent = comparisons.length;
+            counter.style.display = comparisons.length > 0 ? 'inline' : 'none';
+        }
+    } catch (error) {
+        console.error('Fout bij updaten comparison counter:', error);
+    }
+};

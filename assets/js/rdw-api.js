@@ -13,55 +13,71 @@ class RDWApi {
     }
 
     /**
-     * Hoofdfunctie: Haal voertuiggegevens op via kenteken
-     * @param {string} kenteken - Nederlands kenteken (XX-XX-XX format)
+     * Hoofdfunctie: Haal voertuiggegevens op via kenteken (VERNIEUWDE VERSIE)
+     * Deze versie haalt ZOWEL de vaste datasets ALS de dynamische API-links op.
+     * @param {string} kenteken - Nederlands kenteken
      * @returns {Promise<Object>} Voertuiggegevens of null bij fout
      */
     async getVehicleData(kenteken) {
         if (!kenteken || kenteken.length < 6) {
             throw new Error('Kenteken is te kort of ongeldig');
         }
-
-        // Kenteken normaliseren (uppercase, streepjes verwijderen)
         const normalizedKenteken = this.normalizeKenteken(kenteken);
         
-        // Check cache eerst
         if (this.cache.has(normalizedKenteken)) {
             console.log('🎯 RDW data uit cache:', normalizedKenteken);
             return this.cache.get(normalizedKenteken);
         }
-
-        // Rate limiting respecteren
         await this.respectRateLimit();
-
         try {
-            console.log('🔍 RDW API lookup voor:', normalizedKenteken);
+            console.log('🔍 Stap 1: RDW basisgegevens ophalen voor:', normalizedKenteken);
             
-            // Parallel requests voor verschillende datasets
-            const [basicData, fuelData, consumptionData, recallData] = await Promise.allSettled([
-                this.fetchBasicVehicleData(normalizedKenteken),
+            // STAP 1: Haal eerst de basisgegevens op.
+            const basicData = await this.fetchBasicVehicleData(normalizedKenteken);
+            if (!basicData) {
+                console.log('❌ Geen basisgegevens gevonden voor kenteken.');
+                return null;
+            }
+            console.log('🔍 Stap 2: Alle aanvullende API-links zoeken en aanroepen...');
+            // STAP 2: Bouw een lijst van alle API-aanroepen.
+            const apiPromises = [
+                // Voeg de vaste, belangrijke datasets toe die we altijd willen hebben.
                 this.fetchFuelData(normalizedKenteken),
-                this.fetchConsumptionData(normalizedKenteken), // NEDC brandstofverbruik
+                this.fetchConsumptionData(normalizedKenteken),
                 this.fetchRecallData(normalizedKenteken)
-            ]);
-
-            // Combineer resultaten
-            const vehicleData = this.combineVehicleData(
-                basicData.status === 'fulfilled' ? basicData.value : null,
-                fuelData.status === 'fulfilled' ? fuelData.value : null,
-                consumptionData.status === 'fulfilled' ? consumptionData.value : null,
-                recallData.status === 'fulfilled' ? recallData.value : null,
-                normalizedKenteken
-            );
-
-            // Cache resultaat (5 minuten)
-            if (vehicleData) {
-                this.cache.set(normalizedKenteken, vehicleData);
+            ];
+            // Zoek en voeg nu de DYNAMISCHE links uit de basisdata toe.
+            for (const key in basicData) {
+                if (key.startsWith('api_') && typeof basicData[key] === 'string' && basicData[key].startsWith('https://')) {
+                    const subApiUrl = `${basicData[key]}?kenteken=${normalizedKenteken}`;
+                    console.log(`   -> Dynamische link gevonden voor: ${key.replace('api_gekentekende_voertuigen_', '')}`);
+                    apiPromises.push(fetch(subApiUrl).then(res => res.json()));
+                }
+            }
+            
+            // STAP 3: Voer alle API-aanroepen tegelijk uit.
+            const allResults = await Promise.allSettled(apiPromises);
+            // STAP 4: Combineer alle succesvolle resultaten.
+            let gecombineerdeData = { ...basicData };
+            
+            allResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value) {
+                    const data = Array.isArray(result.value) ? result.value[0] : result.value;
+                    if (data) {
+                        delete data.kenteken;
+                        Object.assign(gecombineerdeData, data);
+                    }
+                }
+            });
+            
+            // STAP 5: Roep de bestaande combineer-functie aan voor de finale verwerking.
+            const finalVehicleData = this.combineVehicleData(gecombineerdeData, gecombineerdeData, gecombineerdeData, gecombineerdeData.recalls, normalizedKenteken);
+            // Cache het finale resultaat.
+            if (finalVehicleData) {
+                this.cache.set(normalizedKenteken, finalVehicleData);
                 setTimeout(() => this.cache.delete(normalizedKenteken), 5 * 60 * 1000);
             }
-
-            return vehicleData;
-
+            return finalVehicleData;
         } catch (error) {
             console.error('❌ RDW API fout:', error);
             throw new Error(`RDW lookup gefaald: ${error.message}`);

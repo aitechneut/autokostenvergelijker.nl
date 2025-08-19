@@ -279,8 +279,21 @@ class RDWApi {
             catalogusprijs: basicData.catalogusprijs ? parseInt(basicData.catalogusprijs) : null,
             bpm: basicData.bpm ? parseInt(basicData.bpm) : 0,
             
-            // Nederlandse belasting regels 2025
-            bijtellingspercentage: this.getBijtellingspercentage(basicData, isYoungtimer),
+            // Nederlandse belasting regels 2025 - CHAT #13: Fixed bijtelling calculation
+            ...(() => {
+                const bijtellingsInfo = this.calculateBijtellingspercentage({
+                    kenteken: this.formatKenteken(kenteken),
+                    bouwjaar: vehicleYear,
+                    catalogusprijs: basicData.catalogusprijs ? parseInt(basicData.catalogusprijs) : 0,
+                    brandstof: this.enhancedBrandstofDetection(basicData)
+                });
+                return {
+                    bijtellingspercentage: bijtellingsInfo.percentage,
+                    bijtellingsType: bijtellingsInfo.type,
+                    bijtellingsRegel: bijtellingsInfo.regel,
+                    bijtellingsBaseType: bijtellingsInfo.basis
+                };
+            })(),
             mrb: this.calculateMRB(basicData),
             
             // Extra informatie
@@ -481,6 +494,36 @@ class RDWApi {
     }
 
     /**
+     * CHAT #13: Enhanced brandstof detection - voor juiste bijtelling berekening
+     * Prioriteert merk-specifieke logica voor Tesla en andere elektrische auto's
+     */
+    enhancedBrandstofDetection(basicData) {
+        const merk = basicData.merk?.toLowerCase() || '';
+        const model = basicData.handelsbenaming?.toLowerCase() || '';
+        
+        // Tesla's zijn altijd elektrisch, ongeacht RDW brandstof omschrijving
+        if (merk.includes('tesla')) {
+            console.log('⚡ Tesla gedetecteerd - force brandstof naar Elektrisch');
+            return 'Elektrisch';
+        }
+        
+        // Andere bekende elektrische modellen
+        if ((merk.includes('nissan') && model.includes('leaf')) ||
+            (merk.includes('bmw') && (model.includes('i3') || model.includes('ix'))) ||
+            (merk.includes('volkswagen') && model.includes('id.')) ||
+            (merk.includes('audi') && model.includes('e-tron')) ||
+            (merk.includes('mercedes') && model.includes('eqc')) ||
+            (merk.includes('hyundai') && model.includes('ioniq')) ||
+            (merk.includes('kia') && model.includes('e-niro'))) {
+            console.log('⚡ Bekende elektrische auto gedetecteerd o.b.v. merk+model');
+            return 'Elektrisch';
+        }
+        
+        // Gebruik normale brandstof detectie
+        return this.normalizeBrandstofType(basicData.brandstof_omschrijving);
+    }
+
+    /**
      * CHAT #11: Enhanced elektrisch detection voor Tesla's
      * Gebruikt merk informatie als fallback
      */
@@ -519,6 +562,79 @@ class RDWApi {
         }
         
         return false;
+    }
+
+    /**
+     * CHAT #13: Nederlandse Bijtelling Regels 2025
+     * Bereken correct bijtellingspercentage o.b.v. brandstof, jaar en catalogusprijs
+     */
+    calculateBijtellingspercentage(vehicleData) {
+        const bouwjaar = vehicleData.bouwjaar || new Date().getFullYear();
+        const huidigJaar = new Date().getFullYear(); // 2025
+        const leeftijd = huidigJaar - bouwjaar;
+        const catalogusprijs = vehicleData.catalogusprijs || 0;
+        const brandstof = vehicleData.brandstof || 'Benzine';
+        
+        console.log(`💰 Bijtelling berekening voor ${vehicleData.kenteken}:`, {
+            bouwjaar, leeftijd, catalogusprijs, brandstof
+        });
+        
+        // 1. YOUNGTIMER CHECK (15-30 jaar)
+        if (leeftijd >= 15 && leeftijd <= 30) {
+            console.log('🏛️ Youngtimer regeling: 35% over dagwaarde');
+            return {
+                percentage: 35,
+                type: 'youngtimer',
+                basis: 'dagwaarde',
+                regel: '35% over dagwaarde (15-30 jaar oud)',
+                isYoungtimer: true
+            };
+        }
+        
+        // 2. PRE-2017 CHECK 
+        if (bouwjaar < 2017) {
+            console.log('📅 Pre-2017 regeling: 25% behouden tarief');
+            return {
+                percentage: 25,
+                type: 'pre-2017',
+                basis: 'catalogusprijs', 
+                regel: '25% behouden tarief (voor 2017)',
+                isYoungtimer: false
+            };
+        }
+        
+        // 3. ELEKTRISCH & WATERSTOF CHECK (2025 regels)
+        if (brandstof === 'Elektrisch' || brandstof === 'Waterstof') {
+            if (catalogusprijs <= 30000) {
+                console.log('⚡ Elektrisch laag: 17% tot €30.000');
+                return {
+                    percentage: 17,
+                    type: 'elektrisch-laag',
+                    basis: 'catalogusprijs',
+                    regel: '17% elektrisch/waterstof tot €30.000',
+                    isYoungtimer: false
+                };
+            } else {
+                console.log('⚡ Elektrisch hoog: 22% boven €30.000');
+                return {
+                    percentage: 22,
+                    type: 'elektrisch-hoog', 
+                    basis: 'catalogusprijs',
+                    regel: '22% elektrisch/waterstof boven €30.000',
+                    isYoungtimer: false
+                };
+            }
+        }
+        
+        // 4. ALLE ANDERE BRANDSTOFTYPES (2025 standaard)
+        console.log('🚗 Standaard regeling: 22% voor benzine/diesel/hybride');
+        return {
+            percentage: 22,
+            type: 'standaard',
+            basis: 'catalogusprijs',
+            regel: '22% standaard (benzine/diesel/hybride/LPG/CNG)',
+            isYoungtimer: false
+        };
     }
 
     /**

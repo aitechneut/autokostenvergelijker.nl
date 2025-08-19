@@ -476,6 +476,22 @@
         flex-direction: column;
         align-items: stretch;
     }
+    
+    /* CHAT #07 FIX: Mobile responsive voor nieuwe features */
+    .comparison-success {
+        min-width: 280px;
+        padding: 1.5rem;
+    }
+    
+    .electric-badge {
+        display: block;
+        margin: 0.25rem 0;
+    }
+    
+    .bijtelling-info {
+        display: block;
+        margin: 0.25rem 0;
+    }
 }
 
 /* Range Input (Percentage Slider) Styling - INTERACTIVITY FIX */
@@ -539,4 +555,119 @@ input[type="range"]:focus {
 .percentage-input input[type="range"] {
     flex: 1;
     margin: 0 var(--spacing-sm);
+}
+
+/* CHAT #07 FIX: Styling voor nieuwe features */
+.fuel-type {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.fuel-type em {
+    color: var(--accent-color);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.electric-badge {
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-block;
+    margin-left: 0.5rem;
+}
+
+.bijtelling-info {
+    background: rgba(52, 152, 219, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    display: inline-block;
+}
+
+.comparison-success {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    z-index: 1000;
+    text-align: center;
+    min-width: 300px;
+    border: 1px solid rgba(0,0,0,0.1);
+    animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.success-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.success-icon {
+    font-size: 3rem;
+    color: #10b981;
+    margin-bottom: 0.5rem;
+}
+
+.success-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+}
+
+.success-redirect {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    margin-top: 0.5rem;
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, var(--accent-color), #ec4899);
+    color: white;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-accent:hover {
+    background: linear-gradient(135deg, #ec4899, var(--accent-color));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+}
+
+/* Verbetering voor optgroup styling */
+select optgroup {
+    font-weight: 600;
+    color: var(--primary-color);
+    background: rgba(52, 152, 219, 0.05);
+}
+
+select option {
+    padding: 0.5rem;
+    color: var(--gray-700);
+}
+
+/* Hidden manual fields styling */
+.input-field[style*="display: none"] {
+    transition: opacity 0.3s ease;
 }

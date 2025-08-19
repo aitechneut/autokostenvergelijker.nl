@@ -199,12 +199,17 @@
                         <h3>Financiële Details</h3>
                         
                         <div class="input-field">
-                            <label for="belastingtarief">Belastingtarief</label>
+                            <label for="belastingtarief">Jouw Belastingtarief</label>
                             <select id="belastingtarief">
-                                <option value="37">37% (tot €75.518)</option>
-                                <option value="49.5">49,5% (boven €75.518)</option>
-                                <option value="25.8">25,8% (VPB tarief)</option>
+                                <optgroup label="Inkomstenbelasting (IB) - Voor Particulieren">
+                                    <option value="37">37% - IB tarief (inkomen tot €75.518)</option>
+                                    <option value="49.5">49,5% - IB tarief (inkomen boven €75.518)</option>
+                                </optgroup>
+                                <optgroup label="Vennootschapsbelasting (VPB) - Voor BV's">
+                                    <option value="25.8">25,8% - VPB tarief (BV winstbelasting)</option>
+                                </optgroup>
                             </select>
+                            <small class="input-help">Kies IB als je eenmanszaak/zzp'er bent, VPB als je een BV hebt</small>
                         </div>
 
                         <div class="input-field">

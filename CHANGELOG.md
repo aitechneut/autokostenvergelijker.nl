@@ -1,5 +1,62 @@
 # CHANGELOG - AutoKosten Vergelijker
 
+## v1.11.2 - 2025-08-20 - CHAT #20: CRITICAL BIJTELLING BUG FIX 🚨
+
+### 🚨 CRITICAL BUG FIXED: DET-JAAR GEBASEERDE BIJTELLING
+**Problem:** Bijtelling calculations ignoreerden DET jaar regels en 60-maanden vastlegging
+
+#### ❌ BUG SYMPTOMS
+- Tesla K693BS: Foutieve bijtelling percentage
+- Z121DG: Altijd 22% ongeacht DET jaar
+- Alle auto's: Alleen 2025 regels toegepast
+- Missing: Historische regels, 60-maanden logic, youngtimer handling
+
+#### ✅ COMPLETE FIX IMPLEMENTED
+- **Complete DET-jaar regels tabel**: 2011-2026+ alle jaren
+- **60-maanden vastlegging**: Percentage staat 5 jaar vast vanaf DET
+- **Historische accuracy**: Pre-2017 25%, EV evolutie correct
+- **Enhanced detection**: Tesla/EV brandstof detection verbeterd
+- **Youngtimer support**: 35% over dagwaarde (15-30 jaar)
+- **Oldtimer support**: 0% bijtelling (>30 jaar)
+
+#### 🔧 TECHNICAL CHANGES
+- **NEW:** `initializeBijtellingsRegels()` - Complete regels database
+- **NEW:** `extractDETYear()` - Extract DET jaar uit RDW data
+- **NEW:** `calculateCorrectBijtelling()` - Volledige Nederlandse regels
+- **NEW:** `getBijtellingsRegelByDETYear()` - Historische regeltoepassing
+- **NEW:** `parseDETDate()` - 60-maanden berekening
+- **ENHANCED:** Tesla en EV detectie algorithms
+- **FIXED:** bijtellingspercentage nu correct per DET jaar
+
+#### 📊 BIJTELLING REGELS DATABASE
+**EV's (0g CO2):**
+- 2011-2013: 0%
+- 2014-2018: 4% over alles
+- 2019: 4% tot €50k, 22% daarboven
+- 2020: 8% tot €45k, 22% daarboven
+- 2021: 12% tot €40k, 22% daarboven
+- 2022: 16% tot €35k, 22% daarboven
+- 2023-2024: 16% tot €30k, 22% daarboven
+- 2025: 17% tot €30k, 22% daarboven
+- 2026+: 22% (EV voordeel vervalt)
+
+**Fossiel:**
+- ≤2016: 25% (grootvaderregeling)
+- 2017+: 22%
+
+**Specials:**
+- Youngtimer (15-30 jaar): 35% dagwaarde
+- Oldtimer (>30 jaar): 0%
+- Waterstof (2025+): 17% over alles
+
+#### 🎯 TESTING TARGETS
+- Tesla K693BS: Correct DET 2017 calculation
+- Z121DG: Correct DET jaar based percentage
+- Pre-2017 vehicles: 25% correctly applied
+- Youngtimers: 35% over estimated dagwaarde
+
+---
+
 ## v1.11.1 - 2025-08-20 - CHAT #19: ROLLBACK FROM v1.12 ✅
 
 ### 🔄 ROLLBACK EXECUTED: v1.12 → v1.11

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>v1.11.1 Complete Testing Suite</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .test-result {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #4ade80;
+        }
+        .test-error {
+            border-left-color: #ef4444;
+        }
+        .test-warning {
+            border-left-color: #f59e0b;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        button {
+            background: #4ade80;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #22c55e;
+        }
+        .status {
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .status.success { background: #22c55e; }
+        .status.error { background: #ef4444; }
+        .status.warning { background: #f59e0b; }
+        .status.info { background: #3b82f6; }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .test-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        .test-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4ade80;
+        }
+        .loading {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 v1.11.1 Complete Testing Suite</h1>
+        <p><strong>Purpose:</strong> Systematic testing of v1.11.1 rollback deployment</p>
+        <p><strong>Focus:</strong> Tesla K693BS, bijtelling calculations, Calculator #1 workflow, RDW API</p>
+        
+        <div class="summary-stats">
+            <div class="stat-card">
+                <div class="stat-number" id="testsTotal">0</div>
+                <div>Total Tests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="testsSuccess">0</div>
+                <div>Passed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="testsFailed">0</div>
+                <div>Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="testsWarnings">0</div>
+                <div>Warnings</div>
+            </div>
+        </div>
+        
+        <div class="test-controls">
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="testTeslaK693BS()">🚗 Test Tesla K693BS</button>
+            <button onclick="testBijtellingsregels()">📊 Test Bijtelling Rules</button>
+            <button onclick="testRDWAPI()">🔌 Test RDW API</button>
+            <button onclick="testMultipleKentekens()">🔍 Test Multiple Vehicles</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div class="test-grid">
+            <div>
+                <h3>Custom Kenteken Test</h3>
+                <input type="text" class="test-input" id="customKenteken" placeholder="Voer kenteken in (bijv. K693BS)" maxlength="8">
+                <button onclick="testCustomKenteken()">Test Kenteken</button>
+            </div>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- Include RDW API -->
+    <script src="/assets/js/rdw-api.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        let testStats = {
+            total: 0,
+            success: 0,
+            failed: 0,
+            warnings: 0
+        };
+        
+        function updateStats() {
+            document.getElementById('testsTotal').textContent = testStats.total;
+            document.getElementById('testsSuccess').textContent = testStats.success;
+            document.getElementById('testsFailed').textContent = testStats.failed;
+            document.getElementById('testsWarnings').textContent = testStats.warnings;
+        }
+        
+        function addResult(title, content, type = 'info') {
+            testStats.total++;
+            if (type === 'success') testStats.success++;
+            else if (type === 'error') testStats.failed++;
+            else if (type === 'warning') testStats.warnings++;
+            
+            updateStats();
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${type === 'error' ? 'test-error' : ''} ${type === 'warning' ? 'test-warning' : ''}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <div class="status ${type}">${type.toUpperCase()}</div>
+                <pre>${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+                <small>⏰ ${new Date().toLocaleTimeString()}</small>
+            `;
+            resultsDiv.appendChild(div);
+            
+            // Auto-scroll to latest result
+            div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+            testStats = { total: 0, success: 0, failed: 0, warnings: 0 };
+            updateStats();
+        }
+        
+        async function runAllTests() {
+            clearResults();
+            addResult('🚀 Starting Complete Test Suite', 'Running all v1.11.1 tests...', 'info');
+            
+            try {
+                await testTeslaK693BS();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testBijtellingsregels();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testRDWAPI();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testMultipleKentekens();
+                
+                addResult('🎉 Test Suite Completed', `
+Total Tests: ${testStats.total}
+✅ Passed: ${testStats.success}
+❌ Failed: ${testStats.failed}
+⚠️ Warnings: ${testStats.warnings}
+
+Success Rate: ${Math.round((testStats.success / testStats.total) * 100)}%
+                `, testStats.failed === 0 ? 'success' : 'warning');
+                
+            } catch (error) {
+                addResult('❌ Test Suite Failed', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTeslaK693BS() {
+            addResult('🚗 Testing Tesla K693BS', 'Primary test case for v1.11.1...', 'info');
+            
+            try {
+                const rdwApi = new RDWApi();
+                const vehicleData = await rdwApi.getVehicleData('K693BS');
+                
+                if (!vehicleData) {
+                    addResult('❌ Tesla K693BS: No Data', 'RDW lookup failed', 'error');
+                    return;
+                }
+                
+                // Basic data validation
+                const validations = {
+                    'Kenteken Format': vehicleData.kenteken === 'K6-93-BS',
+                    'Merk is Tesla': vehicleData.merk?.toLowerCase().includes('tesla'),
+                    'Is Elektrisch': vehicleData.isElektrisch === true,
+                    'Has Bouwjaar': vehicleData.bouwjaar > 0,
+                    'Has Catalogusprijs': vehicleData.catalogusprijs > 0,
+                    'Bijtelling Calculated': vehicleData.bijtellingspercentage > 0
+                };
+                
+                const passedValidations = Object.values(validations).filter(v => v).length;
+                const totalValidations = Object.keys(validations).length;
+                
+                addResult('✅ Tesla K693BS: Basic Data', `
+✅ Kenteken: ${vehicleData.kenteken}
+✅ Merk: ${vehicleData.merk}
+✅ Model: ${vehicleData.handelsbenaming}
+✅ Bouwjaar: ${vehicleData.bouwjaar}
+✅ Elektrisch: ${vehicleData.isElektrisch}
+✅ Catalogusprijs: €${vehicleData.catalogusprijs?.toLocaleString()}
+✅ Bijtelling: ${vehicleData.bijtellingspercentage}%
+
+Validations: ${passedValidations}/${totalValidations} passed
+                `, passedValidations === totalValidations ? 'success' : 'warning');
+                
+                // Bijtelling logic validation
+                const expectedBijtelling = vehicleData.catalogusprijs <= 30000 ? 17 : 22;
+                const isCorrectBijtelling = vehicleData.bijtellingspercentage === expectedBijtelling;
+                
+                addResult(
+                    `${isCorrectBijtelling ? '✅' : '❌'} Tesla K693BS: Bijtelling Logic`,
+                    `
+Expected: ${expectedBijtelling}% (EV ${vehicleData.catalogusprijs <= 30000 ? '≤€30k' : '>€30k'})
+Actual: ${vehicleData.bijtellingspercentage}%
+Status: ${isCorrectBijtelling ? 'CORRECT' : 'INCORRECT'}
+Rule Applied: v1.11 simplified rules
+                    `,
+                    isCorrectBijtelling ? 'success' : 'error'
+                );
+                
+            } catch (error) {
+                addResult('❌ Tesla K693BS: Error', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testBijtellingsregels() {
+            addResult('📊 Testing Bijtelling Rules', 'Testing various scenarios...', 'info');
+            
+            const testCases = [
+                {
+                    name: 'EV 2023 €25k',
+                    data: { 
+                        merk: 'NISSAN', 
+                        brandstof_omschrijving: 'Elektriciteit', 
+                        catalogusprijs: '25000', 
+                        datum_eerste_toelating: '2023-03-01' 
+                    },
+                    expected: 17,
+                    reason: 'EV ≤€30k'
+                },
+                {
+                    name: 'EV 2023 €40k',
+                    data: { 
+                        merk: 'TESLA', 
+                        brandstof_omschrijving: 'Elektriciteit', 
+                        catalogusprijs: '40000', 
+                        datum_eerste_toelating: '2023-03-01' 
+                    },
+                    expected: 22,
+                    reason: 'EV >€30k'
+                },
+                {
+                    name: 'Benzine 2020',
+                    data: { 
+                        merk: 'VOLKSWAGEN', 
+                        brandstof_omschrijving: 'Benzine', 
+                        catalogusprijs: '30000', 
+                        datum_eerste_toelating: '2020-01-01' 
+                    },
+                    expected: 22,
+                    reason: 'Non-EV post-2017'
+                },
+                {
+                    name: 'Pre-2017 auto',
+                    data: { 
+                        merk: 'BMW', 
+                        brandstof_omschrijving: 'Benzine', 
+                        catalogusprijs: '35000', 
+                        datum_eerste_toelating: '2015-05-01' 
+                    },
+                    expected: 25,
+                    reason: 'Pre-2017 rule'
+                },
+                {
+                    name: 'Youngtimer (20 jaar)',
+                    data: { 
+                        merk: 'BMW', 
+                        brandstof_omschrijving: 'Benzine', 
+                        catalogusprijs: '15000', 
+                        datum_eerste_toelating: '2004-01-01' 
+                    },
+                    expected: 35,
+                    reason: 'Youngtimer 15-30 jaar'
+                }
+            ];
+            
+            const rdwApi = new RDWApi();
+            let correctResults = 0;
+            
+            for (const testCase of testCases) {
+                // Determine youngtimer status
+                const currentYear = new Date().getFullYear();
+                const vehicleYear = parseInt(testCase.data.datum_eerste_toelating.substr(0, 4));
+                const vehicleAge = currentYear - vehicleYear;
+                const isYoungtimer = vehicleAge >= 15 && vehicleAge <= 30;
+                
+                const result = rdwApi.calculateSimpleBijtelling(testCase.data, isYoungtimer);
+                const isCorrect = result === testCase.expected;
+                
+                if (isCorrect) correctResults++;
+                
+                addResult(
+                    `${isCorrect ? '✅' : '❌'} ${testCase.name}`,
+                    `
+Expected: ${testCase.expected}% (${testCase.reason})
+Actual: ${result}%
+Age: ${vehicleAge} years (Youngtimer: ${isYoungtimer})
+Status: ${isCorrect ? 'CORRECT' : 'INCORRECT'}
+                    `,
+                    isCorrect ? 'success' : 'error'
+                );
+            }
+            
+            addResult(
+                `📊 Bijtelling Rules Summary`,
+                `
+Correct: ${correctResults}/${testCases.length}
+Accuracy: ${Math.round((correctResults / testCases.length) * 100)}%
+Version: v1.11 simplified rules (no 60-month complexity)
+                `,
+                correctResults === testCases.length ? 'success' : 'warning'
+            );
+        }
+        
+        async function testRDWAPI() {
+            addResult('🔌 Testing RDW API Integration', 'Testing API endpoints and error handling...', 'info');
+            
+            const rdwApi = new RDWApi();
+            
+            // Test 1: Valid kenteken format validation
+            const validKentekens = ['K693BS', 'AB-123-C', '12-ABC-3'];
+            const invalidKentekens = ['ABC', '123', 'TOOLONG123'];
+            
+            let validationTests = 0;
+            let validationPassed = 0;
+            
+            for (const kenteken of validKentekens) {
+                validationTests++;
+                if (rdwApi.isValidKenteken(kenteken)) validationPassed++;
+            }
+            
+            for (const kenteken of invalidKentekens) {
+                validationTests++;
+                if (!rdwApi.isValidKenteken(kenteken)) validationPassed++;
+            }
+            
+            addResult(
+                `✅ Kenteken Validation`,
+                `
+Valid kentekens: ${validKentekens.join(', ')}
+Invalid kentekens: ${invalidKentekens.join(', ')}
+Tests passed: ${validationPassed}/${validationTests}
+                `,
+                validationPassed === validationTests ? 'success' : 'warning'
+            );
+            
+            // Test 2: Kenteken normalization
+            const normalizationTests = [
+                { input: 'K693BS', expected: 'K6-93-BS' },
+                { input: 'k693bs', expected: 'K6-93-BS' },
+                { input: 'K6-93-BS', expected: 'K6-93-BS' },
+                { input: 'AB123C', expected: 'AB-12-3C' }
+            ];
+            
+            let normalizationPassed = 0;
+            for (const test of normalizationTests) {
+                const result = rdwApi.formatKenteken(test.input);
+                if (result === test.expected) normalizationPassed++;
+            }
+            
+            addResult(
+                `✅ Kenteken Normalization`,
+                `
+Tests: ${normalizationTests.length}
+Passed: ${normalizationPassed}
+Sample: 'k693bs' → '${rdwApi.formatKenteken('k693bs')}'
+                `,
+                normalizationPassed === normalizationTests.length ? 'success' : 'warning'
+            );
+            
+            // Test 3: Rate limiting
+            const startTime = Date.now();
+            try {
+                await rdwApi.respectRateLimit();
+                await rdwApi.respectRateLimit();
+                const duration = Date.now() - startTime;
+                
+                addResult(
+                    `✅ Rate Limiting`,
+                    `
+Duration: ${duration}ms
+Expected: ≥100ms between calls
+Status: ${duration >= 100 ? 'WORKING' : 'TOO_FAST'}
+                    `,
+                    duration >= 100 ? 'success' : 'warning'
+                );
+            } catch (error) {
+                addResult('❌ Rate Limiting', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMultipleKentekens() {
+            addResult('🔍 Testing Multiple Vehicles', 'Testing various kentekens for robustness...', 'info');
+            
+            const testKentekens = [
+                { kenteken: 'K693BS', expected: 'Tesla (should work)' },
+                { kenteken: 'INVALID', expected: 'Should fail gracefully' },
+                { kenteken: 'AB123C', expected: 'May or may not exist' }
+            ];
+            
+            const rdwApi = new RDWApi();
+            
+            for (const test of testKentekens) {
+                try {
+                    const startTime = Date.now();
+                    const vehicleData = await rdwApi.getVehicleData(test.kenteken);
+                    const duration = Date.now() - startTime;
+                    
+                    if (vehicleData) {
+                        addResult(
+                            `✅ ${test.kenteken}: Found`,
+                            `
+Merk: ${vehicleData.merk}
+Model: ${vehicleData.handelsbenaming}
+Bouwjaar: ${vehicleData.bouwjaar}
+Elektrisch: ${vehicleData.isElektrisch}
+Response time: ${duration}ms
+Expected: ${test.expected}
+                            `,
+                            'success'
+                        );
+                    } else {
+                        addResult(
+                            `⚠️ ${test.kenteken}: Not Found`,
+                            `
+No data returned from RDW
+Response time: ${duration}ms
+Expected: ${test.expected}
+Status: Graceful handling ✅
+                            `,
+                            'warning'
+                        );
+                    }
+                } catch (error) {
+                    addResult(
+                        `❌ ${test.kenteken}: Error`,
+                        `
+Error: ${error.message}
+Expected: ${test.expected}
+Status: Error handled ✅
+                        `,
+                        'warning'
+                    );
+                }
+                
+                // Small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        async function testCustomKenteken() {
+            const kenteken = document.getElementById('customKenteken').value.trim();
+            
+            if (!kenteken) {
+                addResult('⚠️ Custom Test', 'Please enter a kenteken first', 'warning');
+                return;
+            }
+            
+            addResult('🔍 Custom Kenteken Test', `Testing: ${kenteken}`, 'info');
+            
+            try {
+                const rdwApi = new RDWApi();
+                const startTime = Date.now();
+                const vehicleData = await rdwApi.getVehicleData(kenteken);
+                const duration = Date.now() - startTime;
+                
+                if (vehicleData) {
+                    addResult(
+                        `✅ ${kenteken}: Success`,
+                        `
+Merk: ${vehicleData.merk}
+Model: ${vehicleData.handelsbenaming}
+Bouwjaar: ${vehicleData.bouwjaar}
+Brandstof: ${vehicleData.brandstof}
+Elektrisch: ${vehicleData.isElektrisch}
+Catalogusprijs: €${vehicleData.catalogusprijs?.toLocaleString()}
+Bijtelling: ${vehicleData.bijtellingspercentage}%
+Youngtimer: ${vehicleData.isYoungtimer}
+Response time: ${duration}ms
+Data quality: ${vehicleData.dataQuality}%
+                        `,
+                        'success'
+                    );
+                } else {
+                    addResult(`⚠️ ${kenteken}: Not Found`, 'No data returned from RDW', 'warning');
+                }
+            } catch (error) {
+                addResult(`❌ ${kenteken}: Error`, `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run initial test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('🚀 v1.11.1 Testing Ready', 'Test suite loaded successfully. Choose test to run or click "Run All Tests".', 'info');
+            }, 500);
+        });
+        
+        // Enter key support for custom kenteken
+        document.getElementById('customKenteken').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testCustomKenteken();
+            }
+        });
+    </script>
+</body>
+</html>

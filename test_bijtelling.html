@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bijtelling Engine Test - v1.12 60-Maanden Fix</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .test-result {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #4ade80;
+        }
+        .test-error {
+            border-left-color: #ef4444;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #4ade80;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #22c55e;
+        }
+        .status {
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .status.success { background: #22c55e; }
+        .status.error { background: #ef4444; }
+        .status.warning { background: #f59e0b; }
+        .status.info { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Bijtelling Engine Test - v1.12 60-Maanden Fix</h1>
+        <p>🚨 Chat #18: Fixed 60-maanden expiry logic - Tesla K693BS nu 22% ipv 4%</p>
+        
+        <div class="test-controls">
+            <button onclick="testTeslaK693BS()">🚗 Test Tesla K693BS</button>
+            <button onclick="testMultipleVehicles()">🔄 Test Meerdere Auto's</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- Include RDW API -->
+    <script src="/assets/js/rdw-api.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type === 'error' ? 'test-error' : ''}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <div class="status ${type}">${type.toUpperCase()}</div>
+                <pre>${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+            `;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testTeslaK693BS() {
+            addResult('🚀 Starting Tesla K693BS Test', 'Testing complete bijtelling engine...', 'info');
+            
+            try {
+                const rdwApi = new RDWApi();
+                const vehicleData = await rdwApi.getVehicleData('K693BS');
+                
+                if (!vehicleData) {
+                    addResult('❌ RDW Data Failed', 'No vehicle data returned', 'error');
+                    return;
+                }
+                
+                addResult('✅ RDW Data Retrieved', `
+Basic Info:
+- Kenteken: ${vehicleData.kenteken}
+- Merk: ${vehicleData.merk}
+- Model: ${vehicleData.handelsbenaming}
+- Bouwjaar: ${vehicleData.datum_eerste_toelating}
+- Catalogusprijs: €${vehicleData.catalogusprijs?.toLocaleString()}
+- CO2: ${vehicleData.co2_uitstoot_gecombineerd} g/km
+`, 'success');
+                
+                // Test bijtelling berekening
+                if (vehicleData.bijtelling_complete) {
+                    const bijtelling = vehicleData.bijtelling_complete;
+                    
+                    // 🚨 CHAT #18 FIX: Tesla K693BS moet 22% zijn (60-maanden verlopen)
+                    const expectedPercentage = 22; // 60-maanden periode verlopen sinds DET 2017
+                    const actualPercentage = bijtelling.bijtelling_percentage;
+                    
+                    if (actualPercentage === expectedPercentage) {
+                        addResult('✅ Bijtelling Percentage CORRECT', `
+Expected: ${expectedPercentage}% (60-maanden verlopen sinds DET 2017)
+Actual: ${actualPercentage}%
+Status: PASSED ✅
+Rule: ${bijtelling.toegepast_percentage}
+                        `, 'success');
+                    } else {
+                        addResult('❌ Bijtelling Percentage INCORRECT', `
+Expected: ${expectedPercentage}% (60-maanden verlopen sinds DET 2017)  
+Actual: ${actualPercentage}%
+Status: FAILED ❌
+Rule: ${bijtelling.toegepast_percentage}
+                        `, 'error');
+                    }
+                    
+                    addResult('📊 Complete Bijtelling Data', bijtelling, 'info');
+                } else {
+                    addResult('❌ No Bijtelling Data', 'bijtelling_complete not found in response', 'error');
+                }
+                
+                addResult('📋 Full Vehicle Data', vehicleData, 'info');
+                
+            } catch (error) {
+                addResult('❌ Test Failed', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMultipleVehicles() {
+            const testCases = [
+                { kenteken: 'K693BS', description: 'Tesla Model S (2017) - Expected 22% (60-maanden verlopen)' },
+                { kenteken: '1-ABC-23', description: 'Test EV 2023 - Expected 16%' },
+                { kenteken: '12-ABC-3', description: 'Test Benzine 2020 - Expected 22%' }
+            ];
+            
+            addResult('🔄 Testing Multiple Vehicles', `Testing ${testCases.length} vehicles...`, 'info');
+            
+            for (const testCase of testCases) {
+                try {
+                    addResult(`🧪 Testing: ${testCase.kenteken}`, testCase.description, 'info');
+                    
+                    const rdwApi = new RDWApi();
+                    const vehicleData = await rdwApi.getVehicleData(testCase.kenteken);
+                    
+                    if (vehicleData && vehicleData.bijtelling_complete) {
+                        const bijtelling = vehicleData.bijtelling_complete;
+                        addResult(`✅ ${testCase.kenteken} Result`, `
+Percentage: ${bijtelling.bijtelling_percentage}%
+DET Year: ${bijtelling.det_jaar}
+Rule Applied: ${bijtelling.toegepast_percentage}
+Bruto/jaar: €${bijtelling.bijtelling_bruto_per_jaar?.toLocaleString()}
+                        `, 'success');
+                    } else {
+                        addResult(`⚠️ ${testCase.kenteken} Not Found`, 'Vehicle not found in RDW database', 'warning');
+                    }
+                    
+                    // Small delay to respect rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                } catch (error) {
+                    addResult(`❌ ${testCase.kenteken} Error`, error.message, 'error');
+                }
+            }
+        }
+        
+        // Auto-run Tesla test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('🚀 Auto-Starting Tesla K693BS Test', 'Running automatic test...', 'info');
+                testTeslaK693BS();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

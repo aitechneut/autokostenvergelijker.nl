@@ -1,5 +1,46 @@
 # CHANGELOG - AutoKosten Vergelijker
 
+## v1.12 - 2025-08-20 - CHAT #16+17+18: COMPLETE BIJTELLING ENGINE + 60-MAANDEN FIX ✅
+
+### 🎯 BREAKTHROUGH: ENTERPRISE-GRADE BIJTELLING CALCULATIONS
+**Complete DET-jaar gebaseerde bijtelling engine geïmplementeerd + Chat #18 kritieke 60-maanden fix:**
+
+#### 🚀 NIEUWE COMPLETE BIJTELLING ENGINE
+- ✅ **DET-jaar accuracy**: Correct toepassen van regels 2011-2026+
+- ✅ **Tesla K693BS FIX**: 22% (60-maanden verlopen) i.p.v. incorrect 4%
+- ✅ **60-maanden expiry check**: 🚨 CRITICAL fix voor verlopen bescherming
+- ✅ **JSON API**: Structured output voor frontend/backend integratie
+- ✅ **Youngtimer/Oldtimer**: Volledig ondersteund (15-30 jaar = 35%, >30 jaar = 0%)
+- ✅ **Backwards compatibility**: Oude functies blijven werken
+
+#### 📊 BIJTELLING REGEL COVERAGE
+**EV's (0 g/km):**
+- 2011–2013: 0% | 2014–2016: 4% | 2017–2018: 4% | 2019: 4%/22% | 2020: 8%/22%
+- 2021: 12%/22% | 2022: 16%/22% | 2023: 16%/22% | 2024: 16%/22% | 2025: 17%/22%
+
+**Fossiel:** ≤2016: 25% | 2017→: 22%
+
+#### 🚨 CHAT #18 CRITICAL FIX: 60-MAANDEN EXPIRY
+- ✅ **Problem**: Tesla K693BS toonde 4% (DET 2017) maar 60-maanden periode is 3 jaar geleden verlopen
+- ✅ **Solution**: `is60MonthsExpired()` functie toegevoegd - checkt DET + 61 maanden vs huidige datum
+- ✅ **Result**: Tesla K693BS nu correct 22% i.p.v. 4%
+- ✅ **Impact**: Alle EV's met verlopen 60-maanden bescherming krijgen nu 22%
+- ✅ **Files updated**: `rdw-api.js`, `test_bijtelling.html`
+
+#### 🧪 VERIFICATION PASSED
+- ✅ **Tesla K693BS**: Correct 22% bijtelling (60-maanden verlopen)
+- ✅ **JSON Structure**: Professional API response format
+- ✅ **Calculator Integration**: Accurate fiscal calculations
+
+#### 🔧 TECHNICAL IMPLEMENTATION
+- **Files updated**: `rdw-api.js` met complete bijtelling engine + 60-maanden fix
+- **New functions**: `calculateBijtellingspercentage()`, `extractDETYear()`, `getBijtellingsRegelByDETYear()`, `is60MonthsExpired()`
+- **Enhanced**: `getBijtellingsRegelByDETYear()` nu met datumEersteToelating parameter
+- **Test coverage**: Tesla K693BS + multiple vehicle scenarios
+- **Live ready**: v1.12 deployment with CORRECT bijtelling accuracy
+
+---
+
 ## v1.11 - 2025-08-19 - CHAT #14: AutosVergelijken Enhanced UX
 
 ### 🚀 COMPARISON PAGE MAJOR ENHANCEMENTS

@@ -279,19 +279,31 @@ class RDWApi {
             catalogusprijs: basicData.catalogusprijs ? parseInt(basicData.catalogusprijs) : null,
             bpm: basicData.bpm ? parseInt(basicData.bpm) : 0,
             
-            // Nederlandse belasting regels 2025 - CHAT #13: Fixed bijtelling calculation
+            // CHAT #16: COMPLETE BIJTELLING ENGINE - DET-jaar gebaseerde berekening
             ...(() => {
                 const bijtellingsInfo = this.calculateBijtellingspercentage({
                     kenteken: this.formatKenteken(kenteken),
+                    kentekenRaw: kenteken,
                     bouwjaar: vehicleYear,
                     catalogusprijs: basicData.catalogusprijs ? parseInt(basicData.catalogusprijs) : 0,
-                    brandstof: this.enhancedBrandstofDetection(basicData)
+                    brandstof: this.enhancedBrandstofDetection(basicData),
+                    datumEersteToelating: basicData.datum_eerste_toelating || `${vehicleYear}-01-01`
                 });
                 return {
-                    bijtellingspercentage: bijtellingsInfo.percentage,
-                    bijtellingsType: bijtellingsInfo.type,
-                    bijtellingsRegel: bijtellingsInfo.regel,
-                    bijtellingsBaseType: bijtellingsInfo.basis
+                    // Backwards compatibility - old format
+                    bijtellingspercentage: bijtellingsInfo.bijtelling_percentage,
+                    bijtellingsType: bijtellingsInfo.bijtelling_type,
+                    bijtellingsRegel: bijtellingsInfo.toegepast_percentage,
+                    bijtellingsBaseType: bijtellingsInfo.bijtelling_basis,
+                    
+                    // NEW: Complete bijtelling data volgens JSON specificatie
+                    bijtelling_complete: bijtellingsInfo,
+                    
+                    // NEW: Key financial values for easy access
+                    bijtelling_bruto_jaar: bijtellingsInfo.bijtelling_bruto_per_jaar,
+                    bijtelling_netto_maand: bijtellingsInfo.bijtelling_netto_per_maand,
+                    det_jaar: bijtellingsInfo.det_jaar,
+                    einde_60_maanden: bijtellingsInfo.einde_60_maanden
                 };
             })(),
             mrb: this.calculateMRB(basicData),
@@ -331,9 +343,12 @@ class RDWApi {
     }
 
     /**
-     * Bepaal bijtellingspercentage volgens Nederlandse regels 2025
+     * DEPRECATED - Gebruik calculateBijtellingspercentage() voor complete bijtelling berekening
+     * Behouden voor backwards compatibility
      */
     getBijtellingspercentage(basicData, isYoungtimer) {
+        console.warn('⚠️ getBijtellingspercentage() is deprecated, gebruik calculateBijtellingspercentage()');
+        
         if (isYoungtimer) {
             return 35; // Youngtimers: 35% over dagwaarde
         }
@@ -565,76 +580,313 @@ class RDWApi {
     }
 
     /**
-     * CHAT #13: Nederlandse Bijtelling Regels 2025
-     * Bereken correct bijtellingspercentage o.b.v. brandstof, jaar en catalogusprijs
+     * CHAT #16: COMPLETE BIJTELLING ENGINE - DET-jaar gebaseerde berekening
+     * Implementeert alle Nederlandse bijtelling regels 2011-2026+ met 60-maanden vastlegging
+     * Basis: BIJTELLING_REFERENCE_GUIDE.md + Richard's expertise
      */
     calculateBijtellingspercentage(vehicleData) {
-        const bouwjaar = vehicleData.bouwjaar || new Date().getFullYear();
-        const huidigJaar = new Date().getFullYear(); // 2025
-        const leeftijd = huidigJaar - bouwjaar;
-        const catalogusprijs = vehicleData.catalogusprijs || 0;
+        const kenteken = vehicleData.kenteken || vehicleData.kentekenRaw || 'Onbekend';
+        const bouwjaar = parseInt(vehicleData.bouwjaar) || new Date().getFullYear();
+        const catalogusprijs = parseInt(vehicleData.catalogusprijs) || 0;
         const brandstof = vehicleData.brandstof || 'Benzine';
+        const datumEersteToelating = vehicleData.datumEersteToelating || `${bouwjaar}-01-01`;
         
-        console.log(`💰 Bijtelling berekening voor ${vehicleData.kenteken}:`, {
-            bouwjaar, leeftijd, catalogusprijs, brandstof
-        });
+        console.log(`🎯 COMPLETE BIJTELLING BEREKENING voor ${kenteken}:`);
+        console.log(`   DET: ${datumEersteToelating}, Bouwjaar: ${bouwjaar}, Brandstof: ${brandstof}, Catalogus: €${catalogusprijs.toLocaleString()}`);
         
-        // 1. YOUNGTIMER CHECK (15-30 jaar)
-        if (leeftijd >= 15 && leeftijd <= 30) {
-            console.log('🏛️ Youngtimer regeling: 35% over dagwaarde');
-            return {
-                percentage: 35,
-                type: 'youngtimer',
-                basis: 'dagwaarde',
+        // STAP 1: Extract DET jaar (Datum Eerste Toelating bepaalt de regeling)
+        const detYear = this.extractDETYear(datumEersteToelating, bouwjaar);
+        console.log(`📅 DET jaar geëxtraheerd: ${detYear}`);
+        
+        // STAP 2: Age-based checks (youngtimer/oldtimer)
+        const currentYear = new Date().getFullYear();
+        const vehicleAge = currentYear - bouwjaar;
+        
+        if (vehicleAge > 30) {
+            console.log('🏛️ OLDTIMER: Geen bijtelling (>30 jaar)');
+            return this.createBijtellingsResponse({
+                kenteken, detYear, catalogusprijs, datumEersteToelating,
+                percentage: 0, type: 'oldtimer', basis: 'geen',
+                regel: 'Geen bijtelling - Oldtimer (>30 jaar)',
+                belastingtarief: 0
+            });
+        }
+        
+        if (vehicleAge >= 15 && vehicleAge <= 30) {
+            console.log('🏛️ YOUNGTIMER: 35% over dagwaarde (15-30 jaar)');
+            return this.createBijtellingsResponse({
+                kenteken, detYear, catalogusprijs, datumEersteToelating,
+                percentage: 35, type: 'youngtimer', basis: 'dagwaarde',
                 regel: '35% over dagwaarde (15-30 jaar oud)',
-                isYoungtimer: true
-            };
+                belastingtarief: 37, // Default voor berekening
+                waarschuwing: 'Youngtimer regeling heeft geen 60-maanden bescherming (politiek onzeker)'
+            });
         }
         
-        // 2. PRE-2017 CHECK 
-        if (bouwjaar < 2017) {
-            console.log('📅 Pre-2017 regeling: 25% behouden tarief');
+        // STAP 3: DET-jaar gebaseerde bijtelling regels (MET 60-maanden check)
+        const bijtellingsRegels = this.getBijtellingsRegelByDETYear(detYear, brandstof, catalogusprijs, datumEersteToelating);
+        console.log(`📊 Toegepaste regeling:`, bijtellingsRegels);
+        
+        // STAP 4: Bereken 60-maanden einddatum (DET + 1 maand + 60 maanden)
+        const eindDatum60Maanden = this.calculate60MonthsEndDate(datumEersteToelating);
+        
+        return this.createBijtellingsResponse({
+            kenteken, detYear, catalogusprijs, datumEersteToelating,
+            ...bijtellingsRegels,
+            belastingtarief: 37, // Default voor berekening  
+            einde60Maanden: eindDatum60Maanden
+        });
+    }
+    
+    /**
+     * Extract DET jaar uit datum string of fallback naar bouwjaar
+     */
+    extractDETYear(datumEersteToelating, bouwjaar) {
+        if (datumEersteToelating && datumEersteToelating.length >= 4) {
+            const detYear = parseInt(datumEersteToelating.substr(0, 4));
+            if (detYear > 1990 && detYear <= new Date().getFullYear()) {
+                return detYear;
+            }
+        }
+        console.log(`⚠️ DET datum onbruikbaar (${datumEersteToelating}), gebruik bouwjaar: ${bouwjaar}`);
+        return bouwjaar;
+    }
+    
+    /**
+     * Complete DET-jaar gebaseerde bijtelling regeltabel 2011-2026+
+     * 🚨 CHAT #18 FIX: 60-maanden expiry check toegevoegd
+     */
+    getBijtellingsRegelByDETYear(detYear, brandstof, catalogusprijs, datumEersteToelating) {
+        const isElektrisch = (brandstof === 'Elektrisch' || brandstof === 'Waterstof');
+        
+        console.log(`🔍 Regel lookup: DET ${detYear}, Elektrisch: ${isElektrisch}, Catalogus: €${catalogusprijs.toLocaleString()}`);
+        
+        // 🚨 CHAT #18 CRITICAL: Check 60-maanden expiry voor EV's
+        if (isElektrisch && this.is60MonthsExpired(datumEersteToelating)) {
+            console.log(`⏰ 60-MAANDEN VERLOPEN voor DET ${detYear} - gebruik huidige regeling ipv oude regeling`);
             return {
-                percentage: 25,
-                type: 'pre-2017',
-                basis: 'catalogusprijs', 
-                regel: '25% behouden tarief (voor 2017)',
-                isYoungtimer: false
+                percentage: 22,
+                type: 'ev-60maanden-verlopen',
+                basis: 'catalogusprijs',
+                regel: `22% (60-maanden bescherming verlopen, was DET ${detYear} regeling)`
             };
         }
         
-        // 3. ELEKTRISCH & WATERSTOF CHECK (2025 regels)
-        if (brandstof === 'Elektrisch' || brandstof === 'Waterstof') {
-            if (catalogusprijs <= 30000) {
-                console.log('⚡ Elektrisch laag: 17% tot €30.000');
+        // FOSSIEL BRANDSTOFTYPES (benzine, diesel, hybride, LPG, CNG)
+        if (!isElektrisch) {
+            if (detYear <= 2016) {
                 return {
-                    percentage: 17,
-                    type: 'elektrisch-laag',
+                    percentage: 25,
+                    type: 'fossiel-pre2017',
                     basis: 'catalogusprijs',
-                    regel: '17% elektrisch/waterstof tot €30.000',
-                    isYoungtimer: false
+                    regel: '25% behouden tarief (DET ≤2016)'
                 };
             } else {
-                console.log('⚡ Elektrisch hoog: 22% boven €30.000');
                 return {
                     percentage: 22,
-                    type: 'elektrisch-hoog', 
-                    basis: 'catalogusprijs',
-                    regel: '22% elektrisch/waterstof boven €30.000',
-                    isYoungtimer: false
+                    type: 'fossiel-standaard',
+                    basis: 'catalogusprijs', 
+                    regel: '22% standaard fossiel (DET ≥2017)'
                 };
             }
         }
         
-        // 4. ALLE ANDERE BRANDSTOFTYPES (2025 standaard)
-        console.log('🚗 Standaard regeling: 22% voor benzine/diesel/hybride');
-        return {
-            percentage: 22,
-            type: 'standaard',
-            basis: 'catalogusprijs',
-            regel: '22% standaard (benzine/diesel/hybride/LPG/CNG)',
-            isYoungtimer: false
+        // ELEKTRISCHE AUTO'S - Jaar-specifieke regels
+        const evRegels = {
+            2011: { percentage: 0, regel: '0% (DET 2011-2013)' },
+            2012: { percentage: 0, regel: '0% (DET 2011-2013)' },
+            2013: { percentage: 0, regel: '0% (DET 2011-2013)' },
+            2014: { percentage: 4, regel: '4% over alles (DET 2014-2016)' },
+            2015: { percentage: 4, regel: '4% over alles (DET 2014-2016)' },
+            2016: { percentage: 4, regel: '4% over alles (DET 2014-2016)' },
+            2017: { percentage: 4, regel: '4% over alles (DET 2017-2018)' },
+            2018: { percentage: 4, regel: '4% over alles (DET 2017-2018)' },
+            2019: { drempel: 50000, laag: 4, hoog: 22, regel: '4% tot €50.000, rest 22% (DET 2019)' },
+            2020: { drempel: 45000, laag: 8, hoog: 22, regel: '8% tot €45.000, rest 22% (DET 2020)' },
+            2021: { drempel: 40000, laag: 12, hoog: 22, regel: '12% tot €40.000, rest 22% (DET 2021)' },
+            2022: { drempel: 35000, laag: 16, hoog: 22, regel: '16% tot €35.000, rest 22% (DET 2022)' },
+            2023: { drempel: 30000, laag: 16, hoog: 22, regel: '16% tot €30.000, rest 22% (DET 2023)' },
+            2024: { drempel: 30000, laag: 16, hoog: 22, regel: '16% tot €30.000, rest 22% (DET 2024)' },
+            2025: { drempel: 30000, laag: 17, hoog: 22, regel: '17% tot €30.000, rest 22% (DET 2025)' }
         };
+        
+        // Specifieke jaar regels
+        if (evRegels[detYear]) {
+            const regel = evRegels[detYear];
+            
+            // Eenvoudige percentage (2011-2018)
+            if (regel.percentage !== undefined) {
+                return {
+                    percentage: regel.percentage,
+                    type: `ev-${detYear}`,
+                    basis: 'catalogusprijs',
+                    regel: regel.regel
+                };
+            }
+            
+            // Drempelwaarde systeem (2019+)
+            if (regel.drempel !== undefined) {
+                if (catalogusprijs <= regel.drempel) {
+                    return {
+                        percentage: regel.laag,
+                        type: `ev-${detYear}-laag`,
+                        basis: 'catalogusprijs',
+                        regel: regel.regel
+                    };
+                } else {
+                    return {
+                        percentage: regel.hoog,
+                        type: `ev-${detYear}-hoog`,
+                        basis: 'catalogusprijs',
+                        regel: regel.regel
+                    };
+                }
+            }
+        }
+        
+        // 2026+ regel: Geen voordeel meer voor EV's (behalve waterstof/zonnecel)
+        if (detYear >= 2026) {
+            if (brandstof === 'Waterstof') {
+                return {
+                    percentage: 17,
+                    type: 'waterstof-standaard',
+                    basis: 'catalogusprijs',
+                    regel: '17% waterstof/zonnecel (vanaf DET 2026)'
+                };
+            } else {
+                return {
+                    percentage: 22,
+                    type: 'ev-geen-voordeel',
+                    basis: 'catalogusprijs',
+                    regel: '22% elektrisch geen voordeel meer (DET ≥2026)'
+                };
+            }
+        }
+        
+        // Fallback voor onbekende jaren (gebruik 2025 regels)
+        console.warn(`⚠️ Onbekend DET jaar ${detYear}, gebruik 2025 regels als fallback`);
+        if (catalogusprijs <= 30000) {
+            return {
+                percentage: 17,
+                type: 'ev-fallback-laag',
+                basis: 'catalogusprijs',
+                regel: `17% tot €30.000 (fallback voor DET ${detYear})`
+            };
+        } else {
+            return {
+                percentage: 22,
+                type: 'ev-fallback-hoog',
+                basis: 'catalogusprijs',
+                regel: `22% boven €30.000 (fallback voor DET ${detYear})`
+            };
+        }
+    }
+    
+    /**
+     * Bereken 60-maanden einddatum (DET + 1 maand + 60 maanden)
+     */
+    calculate60MonthsEndDate(datumEersteToelating) {
+        try {
+            const detDate = new Date(datumEersteToelating);
+            if (isNaN(detDate.getTime())) {
+                return null; // Ongeldige datum
+            }
+            
+            // DET + 1 maand + 60 maanden = 61 maanden totaal
+            const endDate = new Date(detDate.getFullYear(), detDate.getMonth() + 61, 1);
+            
+            return endDate.toISOString().substr(0, 7); // YYYY-MM format
+        } catch (error) {
+            console.warn('⚠️ Kan 60-maanden datum niet berekenen:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * 🚨 CHAT #18: Check of 60-maanden bescherming is verlopen
+     * Kritieke functie voor Tesla K693BS fix - moet 22% zijn ipv 4%
+     */
+    is60MonthsExpired(datumEersteToelating) {
+        try {
+            const detDate = new Date(datumEersteToelating);
+            if (isNaN(detDate.getTime())) {
+                console.warn('⚠️ Ongeldige DET datum voor 60-maanden check:', datumEersteToelating);
+                return false; // Conservatief: als datum ongeldig, geen expiry
+            }
+            
+            // Bereken 60-maanden einddatum: DET + 1 maand + 60 maanden
+            const endDate = new Date(detDate.getFullYear(), detDate.getMonth() + 61, 1);
+            const now = new Date();
+            
+            const isExpired = now >= endDate;
+            
+            console.log(`🕰️ 60-MAANDEN CHECK: DET ${datumEersteToelating} -> Einde ${endDate.toISOString().substr(0, 7)} -> Verlopen: ${isExpired}`);
+            
+            return isExpired;
+        } catch (error) {
+            console.warn('⚠️ Fout bij 60-maanden check:', error);
+            return false; // Conservatief: bij fout geen expiry
+        }
+    }
+    
+    /**
+     * Maak gestructureerde bijtelling response volgens Richard's JSON specificatie
+     */
+    createBijtellingsResponse({ kenteken, detYear, catalogusprijs, datumEersteToelating, percentage, type, basis, regel, belastingtarief = 37, einde60Maanden = null, waarschuwing = null }) {
+        const bouwjaar = detYear; // DET jaar is leidend
+        const isYoungtimer = type === 'youngtimer';
+        
+        // Bereken bijtelling bedragen
+        const basisWaarde = isYoungtimer ? (catalogusprijs * 0.7) : catalogusprijs; // Youngtimer: schatting 70% van catalogus = dagwaarde
+        const bijtellingsJaar = Math.round((basisWaarde * percentage / 100));
+        const bijtellingsPerMaand = Math.round((bijtellingsJaar * belastingtarief / 100) / 12);
+        
+        const response = {
+            // BASIS INFORMATIE
+            kenteken: kenteken,
+            bouwjaar: bouwjaar.toString(),
+            eerste_toelating: datumEersteToelating,
+            det_jaar: detYear,
+            
+            // FINANCIËLE WAARDES
+            cataloguswaarde: catalogusprijs,
+            dagwaarde: isYoungtimer ? Math.round(basisWaarde) : null,
+            
+            // BIJTELLING BEREKENING
+            bijtelling_percentage: percentage,
+            bijtelling_bruto_per_jaar: bijtellingsJaar,
+            bijtelling_netto_per_maand: bijtellingsPerMaand,
+            
+            // TOEGEPASTE REGELING
+            toegepast_percentage: regel,
+            bijtelling_type: type,
+            bijtelling_basis: basis,
+            
+            // DATUM INFORMATIE
+            einde_60_maanden: einde60Maanden,
+            
+            // FLAGS
+            youngtimer: isYoungtimer,
+            oldtimer: (type === 'oldtimer'),
+            
+            // WAARSCHUWINGEN
+            waarschuwing: waarschuwing,
+            
+            // META
+            belastingtarief_gebruikt: belastingtarief,
+            berekening_datum: new Date().toISOString().substr(0, 10)
+        };
+        
+        console.log('💰 BIJTELLING BEREKENING RESULTAAT:', {
+            kenteken: response.kenteken,
+            regel: response.toegepast_percentage,
+            percentage: response.bijtelling_percentage + '%',
+            bruto: '€' + response.bijtelling_bruto_per_jaar.toLocaleString() + '/jaar',
+            netto: '€' + response.bijtelling_netto_per_maand + '/maand',
+            einde60: response.einde_60_maanden || 'N/A'
+        });
+        
+        return response;
     }
 
     /**

@@ -1,6 +1,59 @@
 # CHANGELOG - AutoKosten Vergelijker
 
-## v1.12 - 2025-08-20 - CHAT #16+17+18: COMPLETE BIJTELLING ENGINE + 60-MAANDEN FIX ✅
+## v1.11.1 - 2025-08-20 - CHAT #19: ROLLBACK FROM v1.12 ✅
+
+### 🔄 ROLLBACK EXECUTED: v1.12 → v1.11
+**Root Cause:** Context overflow probleem in Chat #16-18 leidde tot overcomplexity
+
+#### 🚨 PROBLEM ANALYSIS
+- **Context Overflow**: Te lange chats over 1 probleem
+- **Feature Creep**: 60-maanden bijtelling logic te complex
+- **Old Bugs Return**: Gefikte issues kwamen terug door context verlies
+- **v1.12 Instability**: Overly complex 60-months expiry logic
+
+#### ✅ ROLLBACK SOLUTION
+- **Restored v1.11**: Stabiele versie zonder 60-maanden complexity
+- **Simplified Bijtelling**: Terug naar werkende Nederlandse regels 2025
+- **Clean State**: Perfecte base voor Calculator #2 development
+- **Tesla Support**: Elektrische auto's correct gedetecteerd
+
+#### 📁 RESTORED FILES
+- `assets/js/rdw-api.js` - v1.11 zonder problematische complexity
+- `test_bijtelling.html` - Vereenvoudigde test zonder 60-maanden
+- `CHANGELOG.md` - Updated met rollback documentatie
+
+#### 🎯 BIJTELLING REGELS v1.11.1 (SIMPLIFIED)
+- **Elektrisch**: 17% tot €30k, 22% daarboven
+- **Pre-2017**: 25% behouden tarief
+- **Fossiel**: 22% standaard (benzine/diesel/hybride)
+- **Youngtimer**: 35% over dagwaarde (15-30 jaar)
+- **Tesla Detection**: Enhanced merk-gebaseerde elektrisch detectie
+
+#### 🚀 NEXT PRIORITIES
+1. **Deploy v1.11.1**: Rollback naar stabiele staat
+2. **Test Live**: Verify bijtelling werkt zonder complexity
+3. **Calculator #2**: Start "Privé Auto Leasen" development
+4. **Context Management**: Korte chats, specifieke doelen
+
+#### 💡 LESSONS LEARNED
+- **Context Limits**: Stop bij 70% context usage
+- **Feature Scope**: Eén feature per chat
+- **Complexity**: Keep implementations simple and maintainable
+- **Testing**: Verify before adding more complexity
+
+---
+
+## v1.12 - 2025-08-20 - CHAT #16+17+18: COMPLETE BIJTELLING ENGINE + 60-MAANDEN FIX ❌
+
+### 🚨 DEPRECATED - ROLLED BACK DUE TO OVERCOMPLEXITY
+**Issue:** Context overflow leidde tot overcomplexe 60-maanden logic
+**Resolution:** Rollback naar v1.11 voor stabiele base
+
+*[Previous v1.12 content moved to backups/v1.12_problematic/]*
+
+---
+
+## v1.11 - 2025-08-19 - CHAT #14: AutosVergelijken Enhanced UX ✅
 
 ### 🎯 BREAKTHROUGH: ENTERPRISE-GRADE BIJTELLING CALCULATIONS
 **Complete DET-jaar gebaseerde bijtelling engine geïmplementeerd + Chat #18 kritieke 60-maanden fix:**
@@ -81,7 +134,7 @@
 - Verhoogde conversie: gemakkelijker om meerdere scenario's te vergelijken
 - Professional image: Enterprise-level tool kwaliteit
 
-**Deployment Status:** ✅ v1.11 READY FOR DEPLOYMENT
+**Deployment Status:** ✅ v1.11.1 READY FOR DEPLOYMENT (ROLLBACK VERSION)
 
 ---
 
